@@ -152,22 +152,116 @@ eliminar_ati<-function(dataset_col){
   
 }
 
+calc_bigote_bajo <- function(dataset_col){
+  
+  q1 <- quantile(dataset_col,probs = 0.25)
+  q3 <- quantile(dataset_col,probs = 0.75)
+  IQR = q3-q1
+  
+  bigote_bajo <- q1 - (1.5 * IQR)
+  
+  return(bigote_bajo)
+  
+}
+
 bigote_alto <- eliminar_ati(dataset_filtrado2$age)
+bigote_bajo <- calc_bigote_bajo(dataset_filtrado2$age)
 
-dataset_ati <- dataset_filtrado2 %>%
-  filter(age > bigote_alto)
+#dataset_ati_bigalto <- dataset_filtrado2 %>%
+#  filter(age > bigote_alto)
 
-dataset_ati
-
-dataset_no_ati <- dataset_filtrado2 %>%
+dataset_fil <- dataset_filtrado2 %>%
   filter(age < bigote_alto)
 
-dataset_no_ati
+dataset_fil2 <- dataset_fil %>%
+  filter(age > bigote_bajo)
+
+#dataset_fil
+
 
 #ggplotly(ggplot(dataset_filtrado2,aes(y=age)) + geom_boxplot())
+ggplotly(ggplot(dataset_fil2,aes(y=age)) + geom_boxplot())
 
 #??quantile()
 
 ```
+
+### Grafico de barras
+
+```{r}
+
+dataset %>%
+  ggplot(aes(x = job, fill = y)) + 
+  geom_bar(position = "fill") +
+  theme(axis.text.x = element_text(size = 10, angle = 45, hjust = 1, vjust = 1),
+        panel.background = element_blank(),
+        plot.title = element_text(size = 25,face = "bold")) +
+  labs(fill = "Suscribed") +
+  ggtitle("Count of suscribed people per job")
+
+#ggplotly(ggplot(dataset,aes(x = job, fill = y)) + 
+#  geom_bar() +
+#  theme(axis.text.x = element_text(size = 10, angle = 45, hjust = 1, vjust = 1)))
+
+```
+
+### Proceso de modelo ML
+
+```{r}
+# Step 1: Dividir los datos
+# Train set & Test set
+# Con Train entreno mi modelo
+# Con Test compruebo mi modelo
+# Dos condiciones
+# Undefitting: Mi modelo generalizo mucho y no tiene mucho accuracy
+# Overfitting: Mi modelo aprendio mi dataset pero no puede generalizar con otro dataset
+library(caret)
+
+set.seed(1993)
+
+indexes <- createDataPartition(dataset$y,
+                               times = 1,
+                               p = 0.7,
+                               list = FALSE)
+
+train_set <- dataset[indexes,]
+test_set <- dataset[-indexes,] # Todo lo que no este en indexes
+
+```
+
+```{r}
+# Particiona el training set
+
+cv.folds <- 
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

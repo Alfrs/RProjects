@@ -1,0 +1,173 @@
+---
+title: "Semana2_EDA"
+output:
+  word_document: default
+  html_document:
+    df_print: paged
+---
+
+<!-- SEMANA 2 --> 
+<!-- SEMANA 2 --> 
+<!-- SEMANA 2 --> 
+
+# SEMANA 2
+
+# Practica relacionada a visualizacion de algunos tipos de datos
+
+## Base de datos:
+
+## Los datos estan relacionados con las campañas de marketing directo, de una institucion bancaria. El objetivo es clasificar si el cliente se suscribira o no.
+
+#### El dataset puede ser encontrado en: https://archive.ics.uci.edu/ml/datasets/Bank+Marketing
+
+#### Importar los paquetes necesarios para todo el proceso de extraccion, limpieza y modelaje
+
+
+```{r}
+require(readr) #libreria necesaria para abrir archivos csv
+library(dplyr) #libreria necesaria para manipular datos
+require(ggplot2) #libreria necesaria para graficar
+require(plotly) #libreria que generalmente toma un objeto de ggplot2 y lo convierte en una grafica dinamica
+#install.packages("plotly")
+```
+
+#### Vamos a leer los datos
+
+```{r}
+
+setwd("C:/Users/alfrs/Documents/Test_1") #Esta funcion se utiliza para stear la direccion del ambiente de trabajo
+#dataset <- read.csv("bank-full.csv") # Lee el archivo, esta no sirve porque el archivo esta separado por punto y coma
+dataset <- read.csv("bank-full.csv", sep=";") # Ahora la funcion si funciona ya que le dimos un argumento mas el cual le dice a la funcion que separe las columnas por punto y coma
+head(dataset,n=10) # sirve para ver los primeros datos del dataset
+```
+
+# La primera cosa que deberiamos hacer es revisar las estructuras de datos
+
+```{r}
+
+str(dataset)
+#dataset$age <- as.numeric(dataset$age)
+#lapply la otra semana
+
+```
+
+# veamos el resumen de la informacion
+
+```{r}
+
+summary(dataset)
+
+```
+
+#### Vamos a realizar graficos 
+##### Cual es nuestra distribucion de edades?
+
+```{r}
+
+grafico_hist <- ggplot(data = dataset,aes(age,fill = y)) + 
+                geom_histogram(bins = 30) + 
+                ggtitle("Distribucion de Edades") + 
+                theme(plot.title = element_text(hjust = 0.5)) +
+                scale_x_continuous(breaks = seq(0,100,5))
+ggplotly(grafico_hist)
+
+```
+
+# ver la proporcion de los datos con respecto a la variable Y
+
+```{r}
+
+prop.table(table(dataset$y))
+# regularizacion L2 
+# es un tipo de penalizacion en algoritmos de machine learning 
+# que se utiliza para ayudar a solventar los problemas de proporcion
+
+```
+
+# Cual es la edad promedio entre YES & NO
+
+```{r}
+
+# Usando dplyr
+dataset%>%
+  select("age","y")%>%
+  group_by(y)%>%
+  summarise(age=mean(age))
+
+dataset%>%
+  select("day","y")%>%
+  group_by(y)%>%
+  summarise(day=mean(day))
+
+```
+
+# realizar un grafico de cajas para entender la varianza que existe entre las edades
+
+```{r}
+
+grafico_box1 <- ggplot(data = dataset,aes(y,age,fill=y)) + geom_boxplot()
+ggplotly(grafico_box1)
+
+```
+
+### Realizar un subset de datos para determinar valores atipicos en la variable Y, seccionada por "Yes" & "No"
+
+```{r}
+
+comienzo <- Sys.time()
+dataset_filtrado <- subset(dataset,y=="no")
+termina <- Sys.time()
+duracion <- termina - comienzo
+duracion
+
+
+comienzo <- Sys.time()
+dataset_filtrado2 <- dataset%>%
+  filter(y == "no")
+termina <- Sys.time()
+duracion <- termina - comienzo
+duracion
+
+```
+
+<!-- SEMANA 3 --> 
+<!-- SEMANA 3 --> 
+<!-- SEMANA 3 --> 
+
+# SEMANA 3
+
+### Vamos a hacer una funcion para calcular
+
+```{r}
+
+eliminar_ati<-function(dataset_col){
+  
+  q1 <- quantile(dataset_col,probs = 0.25)
+  q3 <- quantile(dataset_col,probs = 0.75)
+  IQR = q3-q1
+  
+  bigote_alto <- q3 + (1.5 * IQR)
+  
+  return(bigote_alto)
+  
+}
+
+bigote_alto <- eliminar_ati(dataset_filtrado2$age)
+
+dataset_ati <- dataset_filtrado2 %>%
+  filter(age > bigote_alto)
+
+dataset_ati
+
+dataset_no_ati <- dataset_filtrado2 %>%
+  filter(age < bigote_alto)
+
+dataset_no_ati
+
+#ggplotly(ggplot(dataset_filtrado2,aes(y=age)) + geom_boxplot())
+
+#??quantile()
+
+```
+
+

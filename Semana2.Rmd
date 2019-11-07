@@ -1,0 +1,302 @@
+---
+title: "Semana2"
+author: "Daniel Blanco S"
+date: "17/10/2019"
+output: word_document
+---
+
+# Practica relacionada a visualización de algunos tipos de datos
+
+## Base de datos:
+
+Datos relacionados con las campañas de marketing directo de una institución bancaria.
+
+El objetivo es clasificar si el cliente se suscribirá o no.
+
+El dataset puede ser encontrado en: https://archive.ics.uci.edu/ml/datasets/Bank+Marketing
+
+Importar los paquetes necesarios para todo el proceso de extracción, limpieza y modelaje.
+
+```{r}
+require(readr) # libreria necesaria para abrir archivos csv
+library(dplyr) # libreria necesaria para manipular datos
+require(ggplot2) # libreria necesaria para graficar
+require(plotly) # libreria que generalmente toma un objeto de ggplot2 y lo convierte en una gráfica dinámica
+
+# Si algun paquete no está instalado, se utiliza en consola `install.packages("nombre_del_paquete")` para instalarlo. Se pueden instalar varios usando `install.packages(c("paquete1",paquete2",...)) 
+
+```
+
+#### Vamos a leer los datos
+
+```{r}
+# setwd("C:/Users/...") se usa para setear la dirección del ambiente de trabajo
+
+#dataset <- read.csv("bank-full.csv") # Lee el archivo, esta no sirve porque el archivo está separado por ";"
+
+dataset <- read.csv("bank-full.csv", sep = ";") # ahora si funciona porque le definimos el separador ; para separar las columnas por ";" y no por "," como es por defecto con el read.csv
+
+head(dataset)
+
+```
+
+#### La primera cosa que deberíamos hacer es ver las estructuras de datos
+
+```{r}
+summary(dataset) # un resuen de los datos y si tiene valores NA
+
+```
+Para obtener el tipo de estructura de un dato, se hace `str(dataset$columna1)`
+Para cambiar una estructura a otra se hace: `dataset$age <- as.numeric(dataset$age)`
+
+Se usará el día como integer en lugar de factor para que el modelo pueda predecir otros días en caso que no estén en el dataset original, ya que si fueran factores el modelo no sabría "inventar" días para predecir resultados.
+
+#### Vamos a realizar gráficos
+
+##### Cuál es nuestra distribución de edades
+
+```{r}
+grafico_hist <- ggplot(dataset,aes(age,fill=y))+geom_histogram(bins = 30)+ggtitle("Distribución de edades")+theme(plot.title = element_text(hjust = 0.5))+scale_x_continuous(breaks=seq(0, 100,10))
+
+# ggplotly(grafico_hist) # así es más interactivo
+
+grafico_hist
+
+
+```
+
+## Ver la proporción de los datos con respecto a la variable "y"
+
+**Regularización L2**: tipo de penalización en algoritmos de ML (machine learning) que se utiliza para ayudar a solventar los problemas de proporción.
+
+```{r}
+prop.table(table(dataset$y)) 
+```
+
+## Cual es la edad promedio entre SI y NO?
+
+```{r}
+dataset%>%
+  select("day", "y")%>%
+  group_by(y)%>%
+  summarise(day=mean(day))
+  
+```
+
+## Realizar gráfico de cajas para entender la varianza que existe entre las edades
+
+```{r}
+
+ggplotly(ggplot(dataset,aes(x=y,y=age,fill=y))+geom_boxplot())
+
+
+
+```
+
+### Realizar un subset de datos para determinar valores atípicos en la variable y seccionada or "si" o "no"
+
+```{r}
+require(sys)
+
+comienzo <- Sys.time()
+dataset_filtrado <- subset(dataset, y=="no")
+termino <- Sys.time()
+
+duracion <- termino-comienzo
+
+comienzo <- Sys.time()
+dataset_filtrado_alt <- dataset%>%
+  dplyr::filter(y=="no")
+termino <- Sys.time()
+duracion <- termino-comienzo
+
+# se puede usar dplyr:: para llamar el "filter" de dplyr y no otro con nombre similar, para evitar confusion
+
+
+```
+
+## Funcion para eliminar valores atípicos en la edad
+
+```{r}
+
+elim_atipicos <- function(dataset_col){
+  # dataset_col <- q1
+  q1 <- quantile(dataset_col,probs = 0.25)
+  q3 <- quantile(dataset_col,probs = 0.75)
+  iqr <- q3-q1
+  
+  bigote_alto <- q3 + 1.5*iqr
+  bigote_bajo <- q1-1.5*iqr
+  
+  return(bigote_alto)
+}
+
+elim_atipicos(dataset_filtrado_alt$age)
+
+# ggplotly(ggplot(dataset_filtrado_alt, aes(y=age))+geom_boxplot())
+
+# ??quantile() | Para tener ayuda de la funcion
+
+```
+
+Ejercicio: dataset filtrado alt. Que filtre cuando edad > 70.5
+
+```{r}
+dataset_filtrado_viejos <- subset(dataset_filtrado_alt, age<elim_atipicos(dataset_filtrado_alt$age))
+
+elim_atipicos_bajos <- function(dataset_col){
+  # dataset_col <- q1
+  q1 <- quantile(dataset_col,probs = 0.25)
+  q3 <- quantile(dataset_col,probs = 0.75)
+  iqr <- q3-q1
+  
+  bigote_alto <- q3 + 1.5*iqr
+  bigote_bajo <- q1-1.5*iqr
+  
+  return(bigote_bajo)
+}
+
+dataset_filtrado_jov <- subset(dataset_filtrado_alt, age<elim_atipicos_bajos(dataset_filtrado_alt$age))
+
+```
+
+
+```{r}
+
+dataset%>%
+  ggplot(aes(x=job, fill=y))+
+  geom_bar(position = "fill")+
+  # el "position" es un argumento que pone las barras con porcentajes, 
+  # sin argumento es barras normal
+  labs(fill="Suscribed")+
+  ggtitle("Count of suscribed people per job")+
+  theme(axis.text.x = element_text(size=10,
+                                   angle=45,
+                                   hjust = 1,
+                                   vjust = 1),
+        panel.background = element_blank(),
+        plot.title = element_text(size = 25,face = "bold"))
+
+
+```
+
+#### Proceso de modelo ML
+
+Para empezar, se divide el dataset. Por una parte en "training" y el resto para "testing".
+
+Con training se entrena el modelo. Con testing se prueba el modelo.
+
+Hay dos condiciones: Underfitting y overfitting.
+
+La primera es que el modelo generalizó mucho (pone más en training).
+
+El segundo es que aprendió del dataset pero no generaliza o predecir otro dataset
+con la misma precisión.
+
+```{r}
+# install.packages("caret")
+require(caret)
+set.seed(1990)
+
+indexes <- createDataPartition(dataset$y,
+                               times = 1,
+                               p = 0.7,
+                               list = FALSE)
+
+trainingSet <- dataset[indexes,]
+testSet <- dataset[-indexes,]
+
+prop.table(table(trainingSet$y))
+prop.table(table(testSet$y))
+```
+
+## Crear folds para validacion cruzada
+
+Se generan folds (particiones) en el training set, y el número de estos es proporcional a lo que dura el algoritmo.
+Si se ponen más folds, dura más el algoritmo. Usualmente 3 para pocos datos, 5 lo normal, 10 para muchos (pero normalmente es computacionalmente ineficiente para el poco beneficio que da comparado a 5).
+Entonces se entrena en un fold y se evalúa en los otros folds (esto dentro de folds en el training set original), y se hace esto para cada fold, y al final agarre el accuracy más alto.
+
+```{r}
+# Aquí se generan los folds
+cv.folds <- createMultiFolds(trainingSet$y, k=5, times = 1)
+
+cv.cntrl <- trainControl(method = "repeatedcv", number = 5, repeats = 1, index = cv.folds)
+
+# Para proyecto poner dos argumentos más que son:
+# classProbs = TRUE | Para retornar probabilidad
+# summaryFunction = twoClassSummary
+
+```
+
+
+## Configurar parametros de busqueda
+
+```{r}
+
+grid_rf <- expand.grid(mtry = c(4,6), splitrule = c("gini", "extratrees"), min.node.size=1)
+
+gridxgb <- expand.grid(nrounds = c(100,200), max_depth = c(1,3), 
+                       eta = c(0.1,0.4), gamma = c(0,3), 
+                       colsample_bytree = c(0.7,0.9), min_child_weight = 1,
+                       subsample = 1)
+
+
+
+
+```
+
+
+## Correr el algoritno
+
+```{r}
+# install.packages(c("e1071", "ranger"))
+
+# install.packages("doSNOW")
+# cl <- makeCluster(4, type = "SOCK")
+# registerDoSNOW(cl)
+
+start.time <- Sys.time()
+
+rf_primero <- train(y~., data = trainingSet, method = "ranger", 
+                    trControl = cv.cntrl, tuneLength = 10, 
+                    importance = "permutation")
+# Alternativamente, en lugar de tuneGrid = grid_rf se puede usar tuneLength = 10 por ejemplo
+# para que el modelo pruebe otros métodos
+
+total.time <- Sys.time() - start.time
+
+total.time
+
+stpoCluster(cl)
+
+```
+
+```{r}
+
+rf_primero
+
+
+```
+
+## Creamos matriz de confusion
+
+```{r}
+
+prediccion <- predict(rf_primero, testSet)
+# prediccion
+
+testSet$pred <- prediccion
+
+confusionMatrix(testSet$y, prediccion)
+
+```
+varImp(rf_primero): da la importancia de cada variable en la prediccion
+
+Buscar oversampling, regularizacion, feature engineering (en lugar de edad numericas, dividirlas en "niño, adulto, anciano" digamos), ...
+
+Hacer EDA (exploratory data analysis) con los datos para 
+
+
+
+
+

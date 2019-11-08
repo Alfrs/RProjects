@@ -1,0 +1,298 @@
+---
+title: "Semana_2_EDA"
+author: "Scott Urbina"
+date: "October 17, 2019"
+output: word_document
+---
+
+# Pratica realcionada a visualizacion de algunos tipos de datos
+
+## Base de datos:
+
+## Los datos estan relacionados con las campanas de marketing directo, de una institucion bancaria.El objetivo es clasificar si el cliente se susiscribira o no.
+
+#### El dataset puede ser encontrado en: https://archive.ics.uci.edu/ml/datasets/Bank+Marketing
+
+#### Importar los paquetes necesarios para todo el proceso de extraccion, limpieza y modelaje.
+
+```{r}
+require(readr) # libreria necesaria para abrir archivos csv
+library(dplyr) # libreria necesaria para manipular datos
+require(ggplot2) # libreria necesaria para graficar
+
+require(plotly) # Una libreria que generalmente toma un objeto de ggplot2 y lo convierte en una grafica dinamica
+
+# Si por alguna razon algun paquete no esta instalado, se puede utilizar "install.packages()" para instalarlo
+require(ggpubr)
+
+require(caret)
+
+```
+
+
+#### Vamos a leer los datos
+
+```{r}
+
+setwd("C:/git/RProjects") # Esta funcion se utiliza para setear la direccion del ambiente de trabajo
+#dataset<-read.csv("bank-full.csv") # Lee el archivo, esta no sirve por que el archivo esta separado por punto y coma
+
+dataset<-read.csv("bank-full.csv", sep = ";") # Ahora la funcion si funciona, ya que le dimos un argumento mas el cual le dice a la funcion que separe las columnas por punto y coma
+
+head(dataset, n=1) # sirve para ver los primeros datos
+
+```
+
+# La primera cosa que deberiamos hacer es ver las estructuras de datos
+
+```{r}
+str(dataset$age) # es un numero entero, por ende esta bien con la definicion
+
+str(dataset$job) # Es un factor que contiene 12 niveles, por ende esta bien
+
+str(dataset$marital) # Factor de 3 niveles por ende esta bien
+
+str(dataset$education) # Factor de 4 niveles por ende esta bien
+
+str(dataset$default) # factor de 2 niveles por ende esta bien
+
+str(dataset$balance) # numero entero por ende esta bien
+
+str(dataset$housing) # es un factor de dos niveles por ende esta bien
+
+str(dataset$loan) # es un factor de dos niveles por ende esta bien
+
+str(dataset$contact) # es un factor de tres niveles por ende esta bien
+
+
+str(dataset$day) # mmm, no estoy seguro como proceder
+
+str(dataset$month) # se encuentra como factor, por ende esta bien
+
+str(dataset$duration) # Es un numero entero, por ende esta bien
+
+
+str(dataset$campaign) # Es un entero y esta bien dejarlo asi segun la definicion
+
+str(dataset$pdays) # Es un entero y esta bien dejarlo asi segun la definicion
+
+str(dataset$previous) # Es un entero y esta bien dejarlo asi segun la definicion
+
+str(dataset$poutcome) # Es un factor de 4 niveles, por ende esta bien
+
+str(dataset$y) # Es un factor de dos niveles, por ende esta bien
+
+```
+
+# veamos el resumen de la informacion
+
+```{r}
+summary(dataset)
+
+
+```
+
+#### Vamos a realizar graficos
+
+###### Cual es nuestra distrbucion de edades
+
+```{r}
+
+grafico_hist<-ggplot(dataset,aes(age, fill=y))+geom_histogram(bins=30 )+ggtitle("Distribucion de edades")+theme(plot.title = element_text(hjust=0.5))+scale_x_continuous(breaks = seq(0, 100, 20))
+#ggplotly(grafico_hist)
+grafico_hist
+## Como hacer break en la escala x del histograma
+
+```
+
+
+# ver la proporcion de los datos con respecto a la variable Y
+```{r}
+prop.table(table(dataset$y))
+
+```
+
+# cual es la edad promedio entre si y no's?
+
+
+```{r}
+
+dataset%>%
+  select("age", "y")%>%
+  group_by(y)%>%
+  summarise(age=mean(age))
+
+```
+
+# realizar un grafico de cajas para entender la varianza que existe entre las edades
+
+```{r}
+
+ggplotly(ggplot(dataset,aes(x=y,y=age,fill=y))+geom_boxplot())
+
+```
+
+### Realizar un subset de datos para determinar valores atipicos en la variable Y seccionada por "si" o "no"
+
+```{r}
+
+
+dataset_filtrado<-subset(dataset, y=="no")
+
+comienzo<-Sys.time()
+dataset_manera2<-dataset%>%
+  dplyr::filter(y=="no")
+termino<-Sys.time()
+
+duracion<- termino-comienzo
+```
+
+# Vamos a hacer una funcion para calcular
+
+
+```{r}
+
+eliminar_Ati<-function(dataset_col){
+  
+  q1<-quantile(dataset_col,probs =0.25)
+  
+  q3<-quantile(dataset_col, probs = 0.75)
+  
+  IQR<-q3-q1
+  
+  bigote_alto<-q3+(1.5*IQR)
+  
+  
+  return(bigote_alto)
+  
+}
+
+
+eliminar_Ati(dataset_manera2$age)
+
+ggplotly(ggplot(dataset_manera2, aes(y=age))+ geom_boxplot())
+
+dataset_fil<-dataset_manera2%>%
+  filter(age> eliminar_Ati(dataset_manera2$age))
+
+```
+
+
+### Grafico de barras
+
+```{r}
+
+require(plotly)
+
+dataset%>%
+  ggplot(aes(x=job, fill=y))+
+  geom_bar(position = "fill")+
+  theme(axis.text.x = element_text(size = 10,
+                                   angle = 270,
+                                   hjust = 1,
+                                   vjust = 1),
+        panel.background = element_blank(),
+        plot.title = element_text(size=20, face="bold"))+
+  labs(fill="Suscribed")+
+  ggtitle("Count of suscribed people per job")
+
+#ggplotly(ggplot(dataset,aes(x=job, fill=y))+
+           #geom_bar())
+
+
+```
+
+#### Proceso de modelo ML
+
+```{r}
+#install.packages("caret")
+require(caret)
+set.seed(1993)
+
+indexes<-createDataPartition(dataset$y,
+                             times = 1,
+                             p=0.7, 
+                             list = FALSE)
+
+trainingset<-dataset[indexes,]
+
+testset<-dataset[-indexes,]
+
+
+
+```
+
+
+
+# Crear filds para validacion cruzada
+
+```{r}
+
+cv.folds<-createMultiFolds(trainingset$y, k=5, times = 1)
+
+cv.cntrl<-trainControl(method = "repeatedcv", number = 5, repeats = 1, index = cv.folds)
+
+#classProbs=TRUE # Parametro para retornar probabilidad
+# summaryFunction=twoclassSummary
+
+```
+
+# Configurar parametros de busqueda
+
+```{r}
+
+grid_rf<-expand.grid(mtry=c(4,6), splitrule=c("gini","extratrees"), min.node.size=1)
+
+gridxgb<-expand.grid(nrounds=c(100,200), max_depth=c(1,3),
+                     eta=c(0.1,0.4),gamma=c(0,3),
+                     colsample_bytree=c(0.7,0.9),
+                     min_child_weight=1, subsample=1)
+
+
+```
+
+
+# correr el algoritmo
+
+```{r}
+require(doSNOW)
+
+cl<-makeCluster(4, type = "SOCK")
+registerDoSNOW(cl)
+
+start.time<-Sys.time()
+
+rf_primero<-train(y~., data=trainingset, method="ranger",
+                  trControl=cv.cntrl, tuneLength=3,
+                  importance="permutation")
+total.time<-Sys.time()-start.time
+
+total.time
+
+stopCluster(cl)
+```
+
+```{r}
+rf_primero
+
+
+```
+
+
+# Creamos mtrix de confusion
+
+```{r}
+
+prediccion<-predict(rf_primero, testset)
+
+testset$pred<-prediccion
+
+confusionMatrix(testset$y, prediccion)
+```
+
+
+
+
+
+
+

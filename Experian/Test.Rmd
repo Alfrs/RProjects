@@ -1,0 +1,213 @@
+---
+title: "Experian_Excercise"
+output: word_document
+---
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(plotly)
+library(stringr)
+library(DataExplorer)
+```
+
+
+```{r}
+setwd("D:/alfrs/Documents/Experian")
+dataset <- readxl::read_xlsx("DATA_FILE_FOR_INTERVIEW.xlsx")
+head(dataset)
+```
+
+```{r}
+str(dataset)
+
+dataset$COMPANY_NAME <- as.factor(dataset$COMPANY_NAME)
+dataset$CITY <- as.factor(dataset$CITY)
+dataset$STATE <- as.factor(dataset$STATE)
+dataset$ZIP <- as.factor(dataset$ZIP)
+dataset$COUNTRY <- as.factor(dataset$COUNTRY)
+dataset$PHONE <- as.factor(dataset$PHONE)
+dataset$YEAR_INCORP <- as.numeric(dataset$YEAR_INCORP)
+dataset$ANNUAL_SALES <- as.double(dataset$ANNUAL_SALES)
+dataset$EMPLOYEE_COUNT <- as.double(dataset$EMPLOYEE_COUNT)
+dataset$NET_INCOME <- as.double(dataset$NET_INCOME)
+
+dataset$YEAR_BUCKET <- cut(dataset$YEAR_INCORP,dig.lab=4,breaks=10)
+dataset$YEAR_BUCKET <- str_replace(dataset$YEAR_BUCKET, "\\(", "")
+dataset$YEAR_BUCKET <- str_replace(dataset$YEAR_BUCKET, "]", "")
+dataset$YEAR_BUCKET <- str_replace(dataset$YEAR_BUCKET, ",", " - ")
+
+dataset$YEAR_BUCKET <- as.factor(dataset$YEAR_BUCKET)
+
+dataset$EMPLOYEE_COUNT_BUCKET <- cut(dataset$EMPLOYEE_COUNT,breaks = 10,dig.lab = 10)
+dataset$EMPLOYEE_COUNT_BUCKET <- str_replace(dataset$EMPLOYEE_COUNT_BUCKET, "\\(", "")
+dataset$EMPLOYEE_COUNT_BUCKET <- str_replace(dataset$EMPLOYEE_COUNT_BUCKET, "]", "")
+dataset$EMPLOYEE_COUNT_BUCKET <- str_replace(dataset$EMPLOYEE_COUNT_BUCKET, ",", " - ")
+
+dataset$EMPLOYEE_COUNT_BUCKET <- as.factor(dataset$EMPLOYEE_COUNT_BUCKET)
+
+summary(dataset)
+```
+
+```{r}
+ggplotly(
+ggplot(dataset %>% count(YEAR_INCORP),aes(x = YEAR_INCORP, y = n, fill = as.factor(YEAR_INCORP)))+
+  geom_col()+
+  #geom_text(aes(label = n),position = position_stack(vjust = .5)) +
+  ggtitle("Count of Companies by Year Bucket")+
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())+
+  ylab("Count of Companies by Year") +
+  labs(fill = "Year Incorporated") +
+  coord_flip()
+)
+```
+
+
+
+```{r}
+
+dataset_year_bucket <- dataset %>% filter(!is.na(YEAR_BUCKET))
+
+ggplotly(
+ggplot(dataset_year_bucket %>% count(YEAR_BUCKET),aes(x = YEAR_BUCKET, y = n, fill = as.factor(YEAR_BUCKET)))+
+  geom_col()+
+  geom_text(aes(label = n),position = position_stack(vjust = .5)) +
+  ggtitle("Count of Companies by Year Bucket")+
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())+
+  ylab("Count of companies") +
+  labs(fill = "Year Bucket") +
+  coord_flip()
+)
+
+```
+
+```{r}
+dataset_filtered <- dataset_year_bucket %>% filter(YEAR_INCORP >= 1972)
+dataset_filtered$YEAR_BUCKET <- cut(dataset_filtered$YEAR_INCORP,dig.lab=4,breaks=10)
+dataset_filtered$YEAR_BUCKET <- str_replace(dataset_filtered$YEAR_BUCKET, "\\(", "")
+dataset_filtered$YEAR_BUCKET <- str_replace(dataset_filtered$YEAR_BUCKET, "]", "")
+dataset_filtered$YEAR_BUCKET <- str_replace(dataset_filtered$YEAR_BUCKET, ",", " - ")
+
+dataset_filtered$YEAR_BUCKET <- as.factor(dataset_filtered$YEAR_BUCKET)
+
+summary(dataset_filtered)
+```
+
+```{r}
+
+ggplotly(
+ggplot(dataset_filtered %>% count(YEAR_BUCKET),aes(x = YEAR_BUCKET, y = n, fill = as.factor(YEAR_BUCKET)))+
+  geom_col()+
+  geom_text(aes(label = n),position = position_stack(vjust = .5)) +
+  ggtitle("Count of Companies by Year Bucket")+
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())+
+  ylab("Count of passengers") +
+  labs(fill = "Year Bucket") +
+  coord_flip()
+)
+
+```
+
+
+```{r}
+dataset_emp <- dataset %>% select(EMPLOYEE_COUNT,COUNTRY) %>% filter(is.na(EMPLOYEE_COUNT)) %>% count(COUNTRY)
+
+dataset_emp$COUNTRY <- factor(dataset_emp$COUNTRY, levels = dataset_emp$COUNTRY[order(dataset_emp$n,decreasing = TRUE)])
+
+ggplotly(
+dataset_emp %>% ggplot(aes(x=COUNTRY,y=n,fill=as.factor(n)))+geom_col()+
+        theme(axis.text.x = element_text(size = 10, angle = 90, hjust = .5, vjust = .5),
+        panel.background = element_blank(),
+        plot.title = element_text(size = 25,face = "bold")) + 
+        ylab("Count of NAs") +
+        xlab("Country") +
+        labs(fill = "Count of NAs")
+)
+```
+
+```{r}
+dataset_emp_noNA <- 
+dataset %>% select(EMPLOYEE_COUNT,COUNTRY) %>% filter(!is.na(EMPLOYEE_COUNT))
+
+dataset_emp_noNA <- merge(dataset_emp_noNA %>% select(COUNTRY,EMPLOYEE_COUNT), dataset_emp %>% select(COUNTRY),all=FALSE)
+
+ggplotly(
+dataset_emp_noNA %>% ggplot(aes(x=COUNTRY,y=EMPLOYEE_COUNT))+geom_boxplot()+
+        theme(axis.text.x = element_text(size = 10, angle = 90, hjust = .5, vjust = .5),
+        panel.background = element_blank(),
+        plot.title = element_text(size = 25,face = "bold")) +
+        ylab("Employee Count") + 
+        xlab("Country")
+)
+
+```
+
+```{r}
+
+for (country in unique(dataset$COUNTRY)){
+  dataset_fil <- dataset %>% filter(!is.na(EMPLOYEE_COUNT)) %>% filter(COUNTRY == country)
+  dataset$EMPLOYEE_COUNT <- replace_na(dataset$EMPLOYEE_COUNT,quantile(na.exclude(dataset_fil$EMPLOYEE_COUNT),probs=0.5))
+}
+
+summary(dataset)
+
+```
+
+```{r}
+
+dataset$EMPLOYEE_COUNT_BUCKET <- cut(dataset$EMPLOYEE_COUNT,breaks = 10,dig.lab = 10)
+dataset$EMPLOYEE_COUNT_BUCKET <- str_replace(dataset$EMPLOYEE_COUNT_BUCKET, "\\(", "")
+dataset$EMPLOYEE_COUNT_BUCKET <- str_replace(dataset$EMPLOYEE_COUNT_BUCKET, "]", "")
+dataset$EMPLOYEE_COUNT_BUCKET <- str_replace(dataset$EMPLOYEE_COUNT_BUCKET, ",", " - ")
+dataset$EMPLOYEE_COUNT_BUCKET <- str_replace(dataset$EMPLOYEE_COUNT_BUCKET, "-2200", "0")
+
+dataset$EMPLOYEE_COUNT_BUCKET <- as.factor(dataset$EMPLOYEE_COUNT_BUCKET)
+
+summary(dataset)
+
+```
+
+```{r}
+ggplotly(
+ggplot(dataset %>%
+  count(EMPLOYEE_COUNT_BUCKET),aes(x = EMPLOYEE_COUNT_BUCKET,y=n,fill=EMPLOYEE_COUNT_BUCKET))+
+  geom_col()+
+  geom_text(aes(label = n),position = position_stack(vjust = .5)) +
+  ggtitle("Count of Companies by Employee Number Bucket")+
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())+
+  ylab("Count of Companies") +
+  coord_flip()
+)
+```
+
+```{r}
+dataset_country <- dataset %>% filter(!is.na(COUNTRY))
+
+dataset_country_2 <- dataset_country %>% count(COUNTRY)
+
+dataset_country_f <- tail(dataset_country_2[order(dataset_country_2$n),])
+
+dataset_country_f$COUNTRY <- factor(dataset_country_f$COUNTRY, levels = dataset_country_f$COUNTRY[order(dataset_country_f$n)])
+
+ggplot(dataset_country_f,aes(x=COUNTRY,y=n,fill=COUNTRY))+
+  geom_col()+
+  geom_text(aes(label = n),position = position_stack(vjust = .5)) +
+  ggtitle("Count of Companies by Country")+
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())+
+  ylab("Count of Companies") +
+  coord_flip()
+```
+
+
+

@@ -3,10 +3,6 @@ title: "Lab1"
 output: word_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
 # LABORATORIO 1
 
 ## Importando librerias
@@ -27,7 +23,7 @@ library(tidyr)
 
 ```{r}
 
-setwd("C:/git/RProjects/Lab 1")
+setwd("D:/alfrs/Documents/git/RProjects/Lab 1")
 train_set <- read.csv("train.csv")
 test_set <- read.csv("test.csv")
 
@@ -84,7 +80,7 @@ ggplotly(gender_graph)
 ### Si, las mujeres sobrevivieron mas que los hombres
 
 ## Tiene algo que ver el la edad del pasajero con el hecho de sobrevivir?
-## Hipotesis: Mujeres y niños primero, los pasajeros menores de 18 años tendran mayor probabilidad de sobrevivir
+## Hipotesis: Mujeres y ni?os primero, los pasajeros menores de 18 a?os tendran mayor probabilidad de sobrevivir
 
 ```{r}
 
@@ -104,8 +100,8 @@ ggplotly(age_group_graph)
 
 ```
 
-### Aparentemente la regla no se cumple, solamente se salvaron 82 pasajeros entre las edades de 0 a 20 años
-### Esto en contra de, por ejemplo, pasajeros entre 20 y 30 años de edad, donde se salvaron 84 personas
+### Aparentemente la regla no se cumple, solamente se salvaron 82 pasajeros entre las edades de 0 a 20 a?os
+### Esto en contra de, por ejemplo, pasajeros entre 20 y 30 a?os de edad, donde se salvaron 84 personas
 
 
 # Modelo ML

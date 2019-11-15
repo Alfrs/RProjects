@@ -1,9 +1,21 @@
 ---
-title: "Experian_Excercise"
-output: word_document
+title: "Alfredo Rojas - BIS Data Analyst - Visualization Demo"
+header-includes: \usepackage{graphicx}
+output:
+  pdf_document:
+    keep_tex: true
+  word_document: default
+  html_document:
+    df_print: paged
+always_allow_html: yes
+graphics: yes
 ---
 
-```{r}
+# Visualization demo
+
+## Started by importing libraries
+
+```{r, warning=FALSE, message=FALSE}
 library(dplyr)
 library(tidyr)
 library(ggplot2)
@@ -12,14 +24,17 @@ library(stringr)
 library(DataExplorer)
 ```
 
+## And loading the dataset
 
-```{r}
-setwd("D:/alfrs/Documents/Experian")
+```{r, warning=FALSE, message=FALSE}
+setwd("C:/Users/alfrs/Documents/git/RProjects/Experian")
 dataset <- readxl::read_xlsx("DATA_FILE_FOR_INTERVIEW.xlsx")
 head(dataset)
 ```
 
-```{r}
+## Then I checked column types and reassigned those I thought needed reassignment
+
+```{r, warning=FALSE, message=FALSE}
 str(dataset)
 
 dataset$COMPANY_NAME <- as.factor(dataset$COMPANY_NAME)
@@ -33,26 +48,25 @@ dataset$ANNUAL_SALES <- as.double(dataset$ANNUAL_SALES)
 dataset$EMPLOYEE_COUNT <- as.double(dataset$EMPLOYEE_COUNT)
 dataset$NET_INCOME <- as.double(dataset$NET_INCOME)
 
-dataset$YEAR_BUCKET <- cut(dataset$YEAR_INCORP,dig.lab=4,breaks=10)
-dataset$YEAR_BUCKET <- str_replace(dataset$YEAR_BUCKET, "\\(", "")
-dataset$YEAR_BUCKET <- str_replace(dataset$YEAR_BUCKET, "]", "")
-dataset$YEAR_BUCKET <- str_replace(dataset$YEAR_BUCKET, ",", " - ")
-
-dataset$YEAR_BUCKET <- as.factor(dataset$YEAR_BUCKET)
-
-dataset$EMPLOYEE_COUNT_BUCKET <- cut(dataset$EMPLOYEE_COUNT,breaks = 10,dig.lab = 10)
-dataset$EMPLOYEE_COUNT_BUCKET <- str_replace(dataset$EMPLOYEE_COUNT_BUCKET, "\\(", "")
-dataset$EMPLOYEE_COUNT_BUCKET <- str_replace(dataset$EMPLOYEE_COUNT_BUCKET, "]", "")
-dataset$EMPLOYEE_COUNT_BUCKET <- str_replace(dataset$EMPLOYEE_COUNT_BUCKET, ",", " - ")
-
-dataset$EMPLOYEE_COUNT_BUCKET <- as.factor(dataset$EMPLOYEE_COUNT_BUCKET)
-
 summary(dataset)
 ```
 
-```{r}
-ggplotly(
-ggplot(dataset %>% count(YEAR_INCORP),aes(x = YEAR_INCORP, y = n, fill = as.factor(YEAR_INCORP)))+
+## From this summary, I can see that:
+### A. We have NAs in Year, however, it does not makes sense to change them as Year is a very specific column.
+### B. We have NAs in Employee Count. These can be replaced, we'll need to analyze to determine with what.
+### C. We have NAs in COuntry. Again, this is very specific, so we can just exclude it.
+### D. We have NAs in Annual Sales. This can also be replaced, so need to analyze this.
+
+## I started working on the first point. A distribution of companies by year sounded very easy, but the graph said otherwise.
+## As a matter of fact, the graph was so big that it can't really show in the document
+
+```{r, warning=FALSE, message=FALSE}
+year_graph_1 <- 
+ggplot(dataset %>%
+         count(YEAR_INCORP),
+       aes(x = YEAR_INCORP,
+           y = n,
+           fill = as.factor(YEAR_INCORP)))+
   geom_col()+
   #geom_text(aes(label = n),position = position_stack(vjust = .5)) +
   ggtitle("Count of Companies by Year Bucket")+
@@ -62,29 +76,58 @@ ggplot(dataset %>% count(YEAR_INCORP),aes(x = YEAR_INCORP, y = n, fill = as.fact
   ylab("Count of Companies by Year") +
   labs(fill = "Year Incorporated") +
   coord_flip()
-)
+```
+
+## So then tried a histogram, since we're using years, maybe I can see which are the most valuable, however...
+
+```{r, warning=FALSE, message=FALSE}
+
+ggplot(dataset,aes(x = YEAR_INCORP))+
+  geom_histogram() +
+  ggtitle("Number of Companies by Year")+
+  theme(panel.background = element_blank(),
+        plot.title = element_text(hjust = 0.5)) +
+  xlab("Year") +
+  ylab("Count of Companies")
+
 ```
 
 
+## The histogram did show me that most of my companies are arround the 2000's
+## But I can't really see which year is the most valuable
+## So I did year buckets, that would allow me to graph and see the data in a more manageable way
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 
-ggplotly(
-ggplot(na.exclude(dataset) %>% count(YEAR_BUCKET),aes(x = YEAR_BUCKET, y = n, fill = as.factor(YEAR_BUCKET)))+
+dataset$YEAR_BUCKET <- cut(dataset$YEAR_INCORP,dig.lab=4,breaks=10)
+dataset$YEAR_BUCKET <- str_replace(dataset$YEAR_BUCKET, "\\(", "")
+dataset$YEAR_BUCKET <- str_replace(dataset$YEAR_BUCKET, "]", "")
+dataset$YEAR_BUCKET <- str_replace(dataset$YEAR_BUCKET, ",", " - ")
+
+dataset$YEAR_BUCKET <- as.factor(dataset$YEAR_BUCKET)
+
+ggplot(na.exclude(dataset) %>% 
+         count(YEAR_BUCKET),
+       aes(x = YEAR_BUCKET,
+           y = n,
+           fill = as.factor(YEAR_BUCKET)))+
   geom_col()+
   geom_text(aes(label = n),position = position_stack(vjust = .5)) +
   ggtitle("Count of Companies by Year Bucket")+
   theme(plot.title = element_text(hjust = 0.5),
         axis.text.x = element_blank(),
-        axis.ticks.x = element_blank())+
+        axis.ticks.x = element_blank(),
+        panel.background = element_blank())+
   ylab("Count of companies") +
+  xlab(element_blank()) +
   labs(fill = "Year Bucket") +
   coord_flip()
-)
 
 ```
 
-```{r}
+## Thanks to the buckets, I saw that most of my data is from 1972 going forward. So I did buckets again, but only with these years.
+
+```{r, warning=FALSE, message=FALSE}
 dataset_filtered <- dataset %>% filter(YEAR_INCORP >= 1972)
 dataset_filtered$YEAR_BUCKET <- cut(dataset_filtered$YEAR_INCORP,dig.lab=4,breaks=10)
 dataset_filtered$YEAR_BUCKET <- str_replace(dataset_filtered$YEAR_BUCKET, "\\(", "")
@@ -96,71 +139,126 @@ dataset_filtered$YEAR_BUCKET <- as.factor(dataset_filtered$YEAR_BUCKET)
 summary(dataset_filtered)
 ```
 
-```{r}
+## With this summary I wanted to check the distribution of the Year Bucket
+## This graph looks better, now I can see that most of the companies got incorporated between 2005 and 2010.
 
-ggplotly(
-ggplot(dataset_filtered %>% count(YEAR_BUCKET),aes(x = YEAR_BUCKET, y = n, fill = as.factor(YEAR_BUCKET)))+
+```{r, warning=FALSE, message=FALSE}
+
+ggplot(dataset_filtered %>% 
+         count(YEAR_BUCKET),
+       aes(x = YEAR_BUCKET, 
+           y = n, 
+           fill = as.factor(YEAR_BUCKET)
+           )
+       )+
   geom_col()+
-  geom_text(aes(label = n),position = position_stack(vjust = .5)) +
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
   ggtitle("Count of Companies by Year Bucket")+
   theme(plot.title = element_text(hjust = 0.5),
         axis.text.x = element_blank(),
-        axis.ticks.x = element_blank())+
-  ylab("Count of passengers") +
+        axis.ticks.x = element_blank(),
+        panel.background = element_blank())+
+  ylab("Count of Companies") +
+  xlab(element_blank()) +
   labs(fill = "Year Bucket") +
   coord_flip()
-)
+
 
 ```
 
+## And so, now I know that most of my value is in the time period that goes from 2005 to 2010.
 
-```{r}
-dataset_emp <- dataset %>% select(EMPLOYEE_COUNT,COUNTRY) %>% filter(is.na(EMPLOYEE_COUNT)) %>% count(COUNTRY)
+## I then wanted to see a distribution of companies by employee count.
+## But first, I wanted to see if we had any NAs in the data, and how can we replace them.
 
-dataset_emp$COUNTRY <- factor(dataset_emp$COUNTRY, levels = dataset_emp$COUNTRY[order(dataset_emp$n,decreasing = TRUE)])
+```{r, warning=FALSE, message=FALSE}
+dataset_emp <- dataset %>% 
+  select(EMPLOYEE_COUNT,COUNTRY) %>% 
+  filter(is.na(EMPLOYEE_COUNT)) %>% 
+  count(COUNTRY)
 
-ggplotly(
-dataset_emp %>% ggplot(aes(x=COUNTRY,y=n,fill=as.factor(n)))+geom_col()+
-        theme(axis.text.x = element_text(size = 10, angle = 90, hjust = .5, vjust = .5),
-        panel.background = element_blank(),
-        plot.title = element_text(size = 25,face = "bold")) + 
-        ylab("Count of NAs") +
-        xlab("Country") +
-        labs(fill = "Count of NAs")
-)
+dataset_emp$COUNTRY <- 
+  factor(dataset_emp$COUNTRY, 
+         levels = dataset_emp$COUNTRY[order(dataset_emp$n,
+                                            decreasing = TRUE)])
+
+dataset_emp %>% 
+  ggplot(aes(x=COUNTRY,
+             y=n,
+             fill=as.factor(n))
+         )+
+  geom_col()+
+  ggtitle("Count of NAs Employee Count by Country")+
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(size = 10,
+                                   angle = 90,
+                                   hjust = .5,
+                                   vjust = .5),
+        panel.background = element_blank()) + 
+  ylab(element_blank()) +
+  xlab("Country") +
+  labs(fill = "Count of NAs")
 ```
 
-```{r}
+## Unsurprisingly USA has the highest amount of NAs, which correlates with it having the highest amount of companies
+## Then I wanted to see the variance of Employee Counts, of all countries where I had NAs, but where I had no NA values
+
+```{r, warning=FALSE, message=FALSE}
 dataset_emp_noNA <- 
-dataset %>% select(EMPLOYEE_COUNT,COUNTRY) %>% filter(!is.na(EMPLOYEE_COUNT))
+dataset %>% 
+  select(EMPLOYEE_COUNT,COUNTRY) %>% 
+  filter(!is.na(EMPLOYEE_COUNT))
 
-dataset_emp_noNA <- merge(dataset_emp_noNA %>% select(COUNTRY,EMPLOYEE_COUNT), dataset_emp %>% select(COUNTRY),all=FALSE)
+dataset_emp_noNA <- 
+  merge(dataset_emp_noNA %>% 
+          select(COUNTRY,EMPLOYEE_COUNT),
+        dataset_emp %>% 
+          select(COUNTRY),all=FALSE)
 
-ggplotly(
-dataset_emp_noNA %>% ggplot(aes(x=COUNTRY,y=EMPLOYEE_COUNT))+geom_boxplot()+
-        theme(axis.text.x = element_text(size = 10, angle = 90, hjust = .5, vjust = .5),
-        panel.background = element_blank(),
-        plot.title = element_text(size = 25,face = "bold")) +
-        ylab("Employee Count") + 
-        xlab("Country")
-)
+dataset_emp_noNA %>% 
+  ggplot(aes(x=COUNTRY,y=EMPLOYEE_COUNT))+
+  geom_boxplot()+
+  ggtitle("Variance of Employee Count by Country")+
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(size = 10,
+                                   angle = 90,
+                                   hjust = .5,
+                                   vjust = .5),
+        panel.background = element_blank()) +
+  ylab("Employee Count") + 
+  xlab("Country")
 
 ```
 
-```{r}
+## With this data, I decided that the best way to replace the NAs, was to use the median by country.
+## The reason behind this is because of the outliers in the data, means we can use the median as better measure.
+
+```{r, warning=FALSE, message=FALSE}
 
 for (country in unique(dataset$COUNTRY)){
-  dataset_fil <- dataset %>% filter(!is.na(EMPLOYEE_COUNT)) %>% filter(COUNTRY == country)
-  dataset$EMPLOYEE_COUNT <- replace_na(dataset$EMPLOYEE_COUNT,quantile(na.exclude(dataset_fil$EMPLOYEE_COUNT),probs=0.5))
+  
+  dataset_fil <-
+    dataset %>% 
+    filter(!is.na(EMPLOYEE_COUNT)) %>% 
+    filter(COUNTRY == country)
+  
+  dataset$EMPLOYEE_COUNT <- 
+    replace_na(dataset$EMPLOYEE_COUNT,
+               quantile(na.exclude(dataset_fil$EMPLOYEE_COUNT),
+                        probs=0.5))
 }
 
 summary(dataset)
 
 ```
 
-```{r}
+## With this summary I wanted to check the new values of the Employee Count column
+## I decided to use the same approach as before, where I created buckets to see the distribution
 
-dataset$EMPLOYEE_COUNT_BUCKET <- cut(dataset$EMPLOYEE_COUNT,breaks = 10,dig.lab = 10)
+```{r,warning=FALSE,message=FALSE}
+
+dataset$EMPLOYEE_COUNT_BUCKET <- cut(dataset$EMPLOYEE_COUNT,breaks = 20,dig.lab = 10)
 dataset$EMPLOYEE_COUNT_BUCKET <- str_replace(dataset$EMPLOYEE_COUNT_BUCKET, "\\(", "")
 dataset$EMPLOYEE_COUNT_BUCKET <- str_replace(dataset$EMPLOYEE_COUNT_BUCKET, "]", "")
 dataset$EMPLOYEE_COUNT_BUCKET <- str_replace(dataset$EMPLOYEE_COUNT_BUCKET, ",", " - ")
@@ -172,17 +270,185 @@ summary(dataset)
 
 ```
 
-```{r}
-ggplotly(
+## With this summary I wanted to check the Employee Count Bucket column
+## And with the graphic, I realized that most companies have between 0 and 110,000 employees.
+
+```{r, warning=FALSE, message=FALSE}
+
 ggplot(dataset %>%
-  count(EMPLOYEE_COUNT_BUCKET),aes(x = EMPLOYEE_COUNT_BUCKET,y=n,fill=EMPLOYEE_COUNT_BUCKET))+
+  count(EMPLOYEE_COUNT_BUCKET),
+  aes(x = EMPLOYEE_COUNT_BUCKET,
+      y=n,
+      fill=EMPLOYEE_COUNT_BUCKET))+
   geom_col()+
   geom_text(aes(label = n),position = position_stack(vjust = .5)) +
   ggtitle("Count of Companies by Employee Number Bucket")+
   theme(plot.title = element_text(hjust = 0.5),
         axis.text.x = element_blank(),
-        axis.ticks.x = element_blank())+
+        axis.ticks.x = element_blank(),
+        panel.background = element_blank())+
   ylab("Count of Companies") +
+  xlab(element_blank()) +
+  labs(fill = "Employee Number Bucket") +
   coord_flip()
-)
+
 ```
+
+## As a third point, I wanted to see the distribution by Country.
+## This distribution sounds easy enough, but again, the graphic shows otherwise.
+
+```{r, warning=FALSE, message=FALSE}
+ggplot(dataset %>% 
+         count(COUNTRY),
+       aes(x=COUNTRY,
+           y=n,
+           fill=COUNTRY))+
+  geom_col()+
+  geom_text(aes(label = n),position = position_stack(vjust = .5)) +
+  ggtitle("Count of Companies by Country")+
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        panel.background = element_blank())+
+  ylab("Count of Companies") +
+  xlab(element_blank()) +
+  labs(fill = "Country") +
+  coord_flip()
+```
+
+## What I decided for this distribution, and since we have way too many countries, was that I wanted to see the top countries
+## So I did the distribution, ordered the results by number of companies, and then took the top 10 companies
+
+```{r, warning=FALSE, message=FALSE}
+dataset_country <- dataset %>% filter(!is.na(COUNTRY))
+
+dataset_country_2 <- dataset_country %>% count(COUNTRY)
+
+dataset_country_f <- tail(dataset_country_2[order(dataset_country_2$n),],10)
+
+dataset_country_f$COUNTRY <- 
+  factor(dataset_country_f$COUNTRY,
+         levels = dataset_country_f$COUNTRY[order(dataset_country_f$n)])
+
+ggplot(dataset_country_f,aes(x=COUNTRY,y=n,fill=COUNTRY))+
+  geom_col()+
+  geom_text(aes(label = n),position = position_stack(vjust = .5)) +
+  ggtitle("Count of Companies by Country")+
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        panel.background = element_blank())+
+  ylab("Count of Companies") +
+  xlab(element_blank()) +
+  labs(fill = "Country") +
+  coord_flip()
+```
+
+## Unsurprinsingly, USA is the top country.
+## What is noteworthy, is that the rest of the coutries have less than 5% of the companies that USA has.
+
+## Now I want to see the annual sales during the year where most companies where incorporated.
+
+```{r,warning=FALSE,message=FALSE}
+ggplot(dataset %>%
+         filter(YEAR_INCORP > 2000) %>% 
+         count(YEAR_INCORP),
+       aes(x=YEAR_INCORP,
+           y=n,
+           fill=as.factor(YEAR_INCORP))) +
+  geom_col()+
+  geom_text(aes(label = n),position = position_stack(vjust = .5), size = 3.5) +
+  ggtitle("Count of Companies by Year")+
+  theme(plot.title = element_text(hjust = 0.5),
+        #axis.text.x = element_blank(),
+        #axis.ticks.x = element_blank(),
+        panel.background = element_blank())+
+  ylab("Count of Companies") +
+  xlab(element_blank()) +
+  labs(fill = "Year") +
+  coord_flip()
+  
+```
+
+## With this, I can see that 2007 is the year where the most companies where incorporated.
+## Ww knew to look into this time period because of the previous bucket analysis
+## However, before doing the analysis, we need to replace the NAs in the dataset
+## We can check the variance of the countries, in the same way we did before.
+
+```{r,warning=FALSE,message=FALSE}
+options(scipen = 999)
+
+dataset_annsl <- dataset %>% 
+  select(ANNUAL_SALES,COUNTRY) %>%
+  filter(is.na(ANNUAL_SALES)) %>% 
+  count(COUNTRY)
+
+dataset_annsl_noNA<-dataset %>% 
+  select(ANNUAL_SALES,COUNTRY) %>% 
+  filter(!is.na(ANNUAL_SALES))
+
+dataset_annsl_noNA <- merge(dataset_annsl_noNA %>% 
+                              select(COUNTRY,ANNUAL_SALES),
+                            dataset_annsl %>% 
+                              select(COUNTRY),all=FALSE)
+
+dataset_annsl_noNA %>% ggplot(aes(x=COUNTRY,
+                                  y=ANNUAL_SALES))+
+  geom_boxplot()+
+  ggtitle("Variance of Annual Sales by Country")+
+  theme(axis.text.x = element_text(size = 10, angle = 90, hjust = .5, vjust = .5),
+        panel.background = element_blank(),
+        plot.title = element_text(hjust = 0.5)) +
+  ylab("Annual Sales") + 
+  xlab("Country")
+```
+
+## And, as before, I'm using the median for each country
+
+```{r,warning=FALSE,message=FALSE}
+
+for (country in unique(dataset$COUNTRY)){
+  dataset_fil <- dataset %>% 
+    filter(!is.na(ANNUAL_SALES)) %>%
+    filter(COUNTRY == country)
+  dataset$ANNUAL_SALES <- replace_na(dataset$ANNUAL_SALES,
+                                     quantile(na.exclude(dataset_fil$ANNUAL_SALES),
+                                              probs=0.5))
+}
+
+summary(dataset)
+
+```
+
+## With this summary we can check the values for the Annual Sales column
+
+## And now we can do the analysis of annual sales.
+## However, since the numbers are way too big, I'm using percentages in the graph
+
+```{r, warning=FALSE, message=FALSE}
+dataset_annsl_f <- 
+dataset %>% 
+  filter(YEAR_INCORP == "2007") %>%
+  group_by(COUNTRY,YEAR_INCORP) %>% 
+  summarise(ANNUAL_SALES = sum(ANNUAL_SALES))
+
+dataset_annsl_f$COUNTRY <- 
+  factor(dataset_annsl_f$COUNTRY, 
+         levels = dataset_annsl_f$COUNTRY[order(dataset_annsl_f$ANNUAL_SALES)])
+
+ggplot(dataset_annsl_f,aes(x=COUNTRY,y=ANNUAL_SALES,fill=COUNTRY))+
+  geom_col()+
+  geom_text(aes(label = scales::percent(ANNUAL_SALES/sum(ANNUAL_SALES))),
+            position = "dodge") +
+  ggtitle("Annual Sales Percentage by Country in 2007")+
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        panel.background = element_blank())+
+  ylab("Percent of Annual Sales") +
+  xlab(element_blank()) +
+  labs(fill = "Country") +
+  coord_flip()
+
+```
+

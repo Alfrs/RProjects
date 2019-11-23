@@ -1,0 +1,17 @@
+---
+title: "Proyecto"
+output: pdf_document
+---
+
+```{r, warning=FALSE, message=FALSE}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(plotly)
+library(caret)
+```
+
+```{r}
+getwd()
+```
+

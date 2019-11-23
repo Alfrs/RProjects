@@ -1,0 +1,289 @@
+---
+title: "Lab_2"
+output: html_document
+---
+
+# Libraries
+
+```{r, warning=FALSE, message=FALSE}
+
+library(ggplot2)
+library(plotly)
+library(dplyr)
+library(tidyr)
+library(caret)
+
+```
+
+#Data Dictionary:
+
+### 1. mpg: continuous - mpg	Miles/(US) gallon
+### 2. cylinders: multi-valued discrete - Number of cylinders
+### 3. displacement: continuous - Displacement (cu.in.)
+### 4. horsepower: continuous - Gross horsepower
+### 5. drat: - Rear axle ratio
+### 6. weight: continuous - Weight (1000 lbs)
+### 7. qsec: - 1/4 mile time
+### 8. vs: - Engine (0 = V-shaped, 1 = straight)
+### 9. am: - Transmission (0 = automatic, 1 = manual)
+### 10. gear: - Number of forward gears
+### 11. carb: - Number of carburetors
+
+
+#### drat - Axle ratio is the number of revolutions the output shaft or driveshaft needs to make in order to spin the axle one complete turn. The number is expressed in a ratio, which represents the number of teeth on the ring gear divided by the number of teeth on the pinion. For example, a truck with a 3.73:1 gear ratio means that the driveshaft will turn 3.73 times for each complete wheel spin. Many people simply refer to the axle ratio as 3.73 rather than express it as the ratio 3.73:1. However, they both mean the same thing.
+
+# Data Exploration:
+
+
+```{r}
+
+data <- mtcars
+str(data)
+summary(data)
+
+```
+
+
+# Removing Categoric Columns:
+
+```{r}
+
+data <- mtcars[c(1,3,4,5,6,7)]
+str(data)
+summary(data)
+
+```
+
+# Normalizing Data:
+
+```{r}
+
+library(BBmisc)
+norm_data <- normalize(data[,-1], method = "standardize")
+norm_data$mpg <- data$mpg
+norm_data
+
+```
+
+# Creating a Heatmap
+
+```{r}
+require(reshape2)
+
+corround <- round(cor(norm_data),2)
+
+corrplot(corround,method=c("number"),type=c("lower"))
+  
+         
+```
+
+# Removing Highly Correlated Columns:
+## Removed only disp as mpg is the column we need to predict
+
+```{r}
+cordata <- cor(norm_data)
+
+summary(cordata[upper.tri(cordata)])
+
+require(caret)
+highlycordata <- findCorrelation(cordata,cutoff = 0.75)
+highlycordata
+data[highlycordata]
+# 2,1
+
+data_filtered <- norm_data
+data_filtered$qsec <- NULL 
+data_filtered
+
+summary(data_filtered)
+
+```
+
+
+# Checking new heatmap for high correlations:
+
+
+```{r}
+library(corrplot)
+
+corround <- round(cor(data_filtered),2)
+
+corrplot(corround,method=c("number"),type=c("lower"))
+         
+```
+
+# Hipotesis: A mayor peso, menor el MPG del vehiculo:
+
+```{r}
+ggplotly(
+ggplot(data = data,aes(x = wt, y = mpg)) +
+  geom_line() +
+  geom_line(data = data, aes(y=median(mpg),x=wt),color = 'steelblue') +
+  geom_point(colour = "red") +
+  ggtitle("MPG by Car Weight") +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank()) +
+  ylab("Miles per Galon") + 
+  xlab("Weight")
+)
+```
+
+## Como vemos, esto es cierto, entre mas pese el vehiculo, menor sera su MPG
+
+# Hipotesis: Entre mas caballos de fuerza, menor el MPG del vehiculo, puesto que gastara mas gasolina en el motor:
+
+```{r}
+ggplotly(
+ggplot(data = data,aes(x = hp, y = mpg)) +
+  geom_line() +
+  geom_line(data = data, aes(y=median(mpg),x=hp),color = 'steelblue') +
+  geom_point(colour = "red") +
+  ggtitle("MPG by Car Horsepower") +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank()) +
+  ylab("Miles per Galon") + 
+  xlab("Horsepower")
+)
+```
+
+## Ciertamente los carros con mayor poder de motor gastan mas combustible por milla
+
+# Hipotesis: Entre mas revoluciones deba dar el eje trasero (drat), mayor consumo de combustible habra:
+
+```{r}
+ggplotly(
+ggplot(data = data,aes(x = drat, y = mpg)) +
+  geom_line() +
+  geom_line(data = data, aes(y=median(mpg),x=drat),color = 'steelblue') +
+  geom_point(color = "red") +
+  ggtitle("MPG by Car Rear axle ratio") +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank(),
+        legend.position="none") +
+  ylab("Miles per Galon") + 
+  xlab("Rear axle ratio")
+)
+```
+
+## Mas bien es el caso contrario; Entre menos revoluciones de el eje, mayor sera el consumo
+
+# ML Model:
+
+```{r}
+
+set.seed(1993)
+
+indexes<-createDataPartition(data_filtered$mpg,
+                             times = 1,
+                             p=0.7, 
+                             list = FALSE)
+
+trainingset<-data_filtered[indexes,]
+
+testset<-data_filtered[-indexes,]
+
+prop.table(table(trainingset$mpg))
+prop.table(table(testset$mpg))
+
+```
+
+# Creating folds for validation
+
+```{r}
+
+cv.folds<-createMultiFolds(trainingset$mpg, k=5, times = 1)
+
+cv.cntrl<-trainControl(method = "repeatedcv", number = 5, repeats = 1, index = cv.folds)
+
+```
+
+# Linear regression:
+
+```{r}
+
+linear_reg <- lm(mpg~., data = data_filtered)
+      
+lm_model<-train(mpg~.,
+                data = data_filtered,
+                method = "lm",
+                trControl = cv.cntrl,
+                tuneLength = 10)
+
+
+lm_model
+plot(varImp(lm_model))
+
+```
+
+```{r}
+
+prediccion <- predict(lm_model, testset)
+# prediccion
+
+testset$pred <- prediccion
+
+testset %>% select(mpg,pred)
+
+```
+
+# Modelo con data filtrada, sin tomar en cuenta desplazamiento:
+
+```{r}
+
+data_lr <- data_filtered %>% select(mpg,hp,wt)
+
+set.seed(1993)
+
+indexes_fil<-createDataPartition(data_lr$mpg,
+                             times = 1,
+                             p=0.7, 
+                             list = FALSE)
+
+trainingset_fil<-data_lr[indexes_fil,]
+
+testset_fil<-data_lr[-indexes_fil,]
+
+prop.table(table(trainingset_fil$mpg))
+prop.table(table(testset_fil$mpg))
+
+```
+
+# Creating folds for validation
+
+```{r}
+
+cv.folds_fil<-createMultiFolds(trainingset_fil$mpg, k=5, times = 1)
+
+cv.cntrl_fil<-trainControl(method = "repeatedcv", number = 5, repeats = 1, index = cv.folds_fil)
+
+```
+
+# Linear regression:
+
+```{r}
+
+linear_reg_fil <- lm(mpg~., data = data_lr)
+      
+lm_model_fil <- train(mpg~.,
+                      data = data_lr,
+                      method = "lm",
+                      trControl = cv.cntrl_fil,
+                      tuneLength = 10)
+
+
+lm_model_fil
+plot(varImp(lm_model_fil))
+
+```
+
+```{r}
+
+prediccion <- predict(lm_model_fil, testset_fil)
+# prediccion
+
+testset_fil$pred <- prediccion
+
+testset_fil %>% select(mpg,pred)
+
+```
+

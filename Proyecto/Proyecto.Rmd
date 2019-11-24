@@ -11,7 +11,163 @@ library(plotly)
 library(caret)
 ```
 
+```{r, warning=FALSE,message=FALSE}
+setwd("C:/Users/alfrs/Documents/git/RProjects/Proyecto/ds")
+dataset <- read.csv("train.csv")
+testds <- read.csv("test.csv")
+```
+
 ```{r}
-getwd()
+str(dataset)
+```
+
+```{r}
+dataset$is_female <- as.factor(dataset$is_female)
+```
+
+
+```{r}
+summary(dataset)
+```
+
+```{r}
+head(dataset)
+```
+
+```{r}
+dataset$DG3_NEW <- with(dataset,
+                        ifelse(DG3 == 99 | DG3 == 96, 9, DG3))
+
+ggplot(dataset %>%
+         count(DG3_NEW
+               ,is_female),
+       aes(x = DG3_NEW, 
+           y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  ggtitle("Count of is_female by Marital Status")+
+  theme(plot.title = element_text(hjust = 0.5,),
+        panel.background = element_blank())+
+  ylab("Count of is_female")
+```
+
+```{r}
+dataset$DG3A_NEW <- with(dataset,
+                         ifelse(DG3A == 99 | DG3A == 96, 7, DG3A))
+
+ggplot(dataset %>%
+         count(DG3A_NEW,
+               is_female),
+       aes(x = DG3A_NEW, 
+           y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  ggtitle("Count of is_female by Religion")+
+  theme(plot.title = element_text(hjust = 0.5,),
+        panel.background = element_blank())+
+  ylab("Count of is_female")
+```
+
+```{r}
+
+dataset$DG4_NEW <- with(dataset,
+                        ifelse(DG4 == 99 | DG4 == 96, 12, DG4))
+
+ggplot(dataset %>%
+         count(DG4_NEW,
+               is_female),
+       aes(x = DG4_NEW,
+           y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  ggtitle("Count of is_female by Level of Education")+
+  theme(plot.title = element_text(hjust = 0.5,),
+        panel.background = element_blank())+
+  ylab("Count of is_female")
+```
+
+```{r}
+
+dataset$DG6_NEW <- with(dataset,
+                        ifelse(DG6 == 99 | DG6 == 96, 10, DG6))
+
+ggplot(dataset %>%
+         count(DG6_NEW,is_female),
+       aes(x = DG6_NEW, y = n,fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  ggtitle("Count of is_female by Relationship to Household Head")+
+  theme(plot.title = element_text(hjust = 0.5,),
+        panel.background = element_blank())+
+  ylab("Count of is_female")
+```
+
+```{r}
+dataset$DL1_NEW <- with(dataset,
+                        ifelse(DL1 == 99 | DL1 == 96, 11, DL1))
+
+ggplot(dataset %>%
+         filter(DL1_NEW != '96' & DL1 != '99') %>%
+         count(DL1_NEW,is_female),aes(x = DL1_NEW, y = n,fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),position = position_stack(vjust = .5)) +
+  ggtitle("Count of is_female by Ocupation past year")+
+  theme(plot.title = element_text(hjust = 0.5,),
+        panel.background = element_blank())+
+  ylab("Count of is_female")
+```
+
+```{r}
+dataset$DL2_NEW <- with(dataset,
+                        ifelse(is.na(DL2),34,
+                               ifelse(DL2 == 96 | DL2 == 99, 33, DL2)))
+
+
+ggplot(dataset %>%
+         count(DL2_NEW,is_female),aes(x = DL2_NEW, y = n,fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),position = position_stack(vjust = .5)) +
+  ggtitle("Count of is_female by Primary Job")+
+  theme(plot.title = element_text(hjust = 0.5,),
+        panel.background = element_blank())+
+  ylab("Count of is_female")
+```
+
+
+```{r}
+dataset$DL5_NEW <-with(dataset,
+                       ifelse(is.na(DL5),25,
+                              ifelse(DL5 == 96 | DL5 == 99, 24, DL5)))
+
+ggplot(dataset %>%
+         count(DL5_NEW,is_female),aes(x = DL5_NEW, y = n,fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),position = position_stack(vjust = .5)) +
+  ggtitle("Count of is_female by Money Source Past Year")+
+  theme(plot.title = element_text(hjust = 0.5,),
+        panel.background = element_blank())+
+  ylab("Count of is_female")
+```
+
+```{r}
+dataset$DL24_NEW <-with(dataset,
+                       ifelse(is.na(DL24),11,
+                              ifelse(DL24 == 96 | DL24 == 99, 10, DL24)))
+
+ggplot(dataset %>%
+         count(DL24_NEW,is_female),aes(x = DL24_NEW, y = n,fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),position = position_stack(vjust = .5)) +
+  ggtitle("Count of is_female by Money Source Past Year")+
+  theme(plot.title = element_text(hjust = 0.5,),
+        panel.background = element_blank())+
+  ylab("Count of is_female")
 ```
 

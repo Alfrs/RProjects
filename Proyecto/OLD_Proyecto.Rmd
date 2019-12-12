@@ -1,0 +1,378 @@
+---
+title: "Proyecto"
+output: pdf_document
+---
+
+# Importando librerias
+
+```{r, warning=FALSE, message=FALSE}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(plotly)
+library(caret)
+```
+
+# Seteando el directorio de trabajo e importando el dataset
+
+```{r, warning=FALSE,message=FALSE}
+setwd("./ds")
+dataset <- read.csv("train.csv")
+testds <- read.csv("test.csv")
+```
+
+# Revisando la esctructura de las variables
+
+```{r, warning = FALSE, message = FALSE}
+# str(dataset)
+```
+
+# Cambiando la variable a predecir a un factor
+
+```{r, warning = FALSE, message = FALSE}
+dataset$is_female <- as.factor(dataset$is_female)
+```
+
+# Revisando el dataset; Resulta inutil por la cantidad de variables
+
+```{r, warning = FALSE, message = FALSE}
+# summary(dataset)
+```
+
+# Revisamos los datos iniciales
+
+```{r, warning = FALSE, message = FALSE}
+head(dataset)
+```
+
+# Iniciamos el EDA
+
+## ANalisis: Revisamos la distribucion de genero por estado civil
+
+```{r, warning = FALSE, message = FALSE}
+dataset$DG3_NEW <- with(dataset,
+                        ifelse(DG3 == 99 | DG3 == 96, 9, DG3))
+
+ggplot(dataset %>%
+         count(DG3_NEW
+               ,is_female),
+       aes(x = DG3_NEW, 
+           y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  ggtitle("Count of is_female by Marital Status")+
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab("Count of is_female")
+```
+
+## Resultado: Si la persona tiene una relacion monogama, es mas probable que sea mujer
+
+## Analisis: Revisamos la distribucion de genero por religion
+
+```{r, warning = FALSE, message = FALSE}
+dataset$DG3A_NEW <- with(dataset,
+                         ifelse(DG3A == 99 | DG3A == 96, 7, DG3A))
+
+ggplot(dataset %>%
+         count(DG3A_NEW,
+               is_female),
+       aes(x = DG3A_NEW, 
+           y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  ggtitle("Count of is_female by Religion")+
+  theme(plot.title = element_text(hjust = 0.5,),
+        panel.background = element_blank())+
+  ylab("Count of is_female")
+```
+
+
+```{r}
+dataset$feature1 <- with(dataset,ifelse(DG3 == 3 | DG3A == 4,1,0))
+
+ggplot(dataset %>%
+         count(feature1,
+               is_female),
+       aes(x = feature1, 
+           y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  ggtitle("Count of is_female by Religion")+
+  theme(plot.title = element_text(hjust = 0.5,),
+        panel.background = element_blank())+
+  ylab("Count of is_female")
+```
+
+
+## Resultado: Si la persona es hinduista, es mas probable que sea mujer
+
+## Analisis: Revisamos distribucion de genero por nivel de educacion
+
+```{r, warning = FALSE, message = FALSE}
+
+dataset$DG4_NEW <- with(dataset,
+                        ifelse(DG4 == 99 | DG4 == 96, 12, DG4))
+
+ggplot(dataset %>%
+         count(DG4_NEW,
+               is_female),
+       aes(x = DG4_NEW,
+           y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  ggtitle("Count of is_female by Level of Education")+
+  theme(plot.title = element_text(hjust = 0.5,),
+        panel.background = element_blank())+
+  ylab("Count of is_female")
+```
+
+```{r}
+dataset$feature2 <- with(dataset,ifelse(DG3 == 3 | DG4 == 1,1,0))
+
+ggplot(dataset %>%
+         count(feature2,
+               is_female),
+       aes(x = feature2,
+           y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  ggtitle("Count of is_female by Level of Education")+
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab("Count of is_female")
+
+```
+
+
+## Resultado: Si la persona es iletrada, es mas probable que sea mujer.
+## Tambien, si posee aunque sea educacion media, o secundaria inicial, tambien es probable que lo sea.
+
+## Analisis: Revisamos la distribucion de genero por la relacion con la cabeza de hogar
+
+```{r, warning = FALSE, message = FALSE}
+
+dataset$DG6_NEW <- with(dataset,
+                        ifelse(DG6 == 99 | DG6 == 96, 10, DG6))
+
+ggplot(dataset %>%
+         count(DG6_NEW,is_female),
+       aes(x = DG6_NEW, y = n,fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  ggtitle("Count of is_female by Relationship to Household Head")+
+  theme(plot.title = element_text(hjust = 0.5,),
+        panel.background = element_blank())+
+  ylab("Count of is_female")
+```
+
+```{r}
+
+dataset$feature3 <- with(dataset,ifelse(DG3 == 3 | DG6 == 2,1,0))
+
+ggplot(dataset %>%
+         count(feature3,
+               is_female),
+       aes(x = feature3,
+           y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  ggtitle("Count of is_female by Level of Education")+
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab("Count of is_female")
+
+
+```
+
+
+## Resultado: Si la persona es esposo(a) de la cabeza de hogar, es muy probable que sea mujer
+
+## Analisis: Revisamos distribucion de genero por la ocupacion en el ultimo año
+
+```{r, warning = FALSE, message = FALSE}
+dataset$DL1_NEW <- with(dataset,
+                        ifelse(DL1 == 99 | DL1 == 96, 11, DL1))
+
+ggplot(dataset %>%
+         filter(DL1_NEW != '96' & DL1 != '99') %>%
+         count(DL1_NEW,is_female),aes(x = DL1_NEW, y = n,fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),position = position_stack(vjust = .5)) +
+  ggtitle("Count of is_female by Ocupation past year")+
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab("Count of is_female")
+```
+
+```{r, warning = FALSE, message = FALSE}
+dataset$feature4 <- with(dataset,
+                        ifelse(DG6 == 2 | DL1 == 7, 1, 0))
+
+ggplot(dataset %>%
+         count(feature4,is_female),aes(x = feature4, y = n,fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),position = position_stack(vjust = .5)) +
+  ggtitle("Count of is_female by Ocupation past year")+
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab("Count of is_female")
+```
+
+## Resultado: Si la persona se quedo en casa en el ultimo año, es mas probable que sea mujer
+
+## Analisis: Revisamos la distribucion por genero por Trabajo Principal
+
+```{r, warning = FALSE, message = FALSE}
+dataset$DL2_NEW <- with(dataset,
+                        ifelse(is.na(DL2),34,
+                               ifelse(DL2 == 96 | DL2 == 99, 33, DL2)))
+
+
+ggplot(dataset %>%
+         count(DL2_NEW,is_female),aes(x = DL2_NEW, y = n,fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),position = position_stack(vjust = .5)) +
+  ggtitle("Count of is_female by Primary Job")+
+  theme(plot.title = element_text(hjust = 0.5,),
+        panel.background = element_blank())+
+  ylab("Count of is_female")
+```
+
+## Resultado: Si la persona no contesto (Resultado = NA), es muy probable que sea mujer
+
+## Analisis: Revisamos la distribucion de genero por fuente de ingresos de la persona durante el ultimo a~o
+
+```{r, warning = FALSE, message = FALSE}
+dataset$DL5_NEW <-with(dataset,
+                       ifelse(is.na(DL5),25,
+                              ifelse(DL5 == 96 | DL5 == 99, 24, DL5)))
+
+ggplot(dataset %>%
+         count(DL5_NEW,is_female),aes(x = DL5_NEW, y = n,fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),position = position_stack(vjust = .5)) +
+  ggtitle("Count of is_female by Money Source Past Year")+
+  theme(plot.title = element_text(hjust = 0.5,),
+        panel.background = element_blank())+
+  ylab("Count of is_female")
+```
+
+## Resultado: Si la persona no contesto esta pregunta (Resultado = NA), es mas probable que sea mujer
+## Si la persona tambien contesto que su fuente de ingresos venia de familia, amigos, o su esposo, tambien es mas probable que sea mujer
+
+## Analisis: Revisamos distribucion de genero por estado monetario de la familia.
+
+```{r, warning = FALSE, message = FALSE}
+
+dataset$DL24_NEW <-with(dataset,
+                       ifelse(is.na(DL24),11,
+                              ifelse(DL24 == 96 | DL24 == 99, 10, DL24)))
+
+ggplot(dataset %>%
+         count(DL24_NEW,is_female),aes(x = DL24_NEW, y = n,fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),position = position_stack(vjust = .5)) +
+  ggtitle("Count of is_female by Family Money Situation")+
+  theme(plot.title = element_text(hjust = 0.5,),
+        panel.background = element_blank())+
+  ylab("Count of is_female")
+```
+
+## Resultado: Si la familia no tiene dinero suficiente (Categorias 1,2 y 3), es mas probable que sea mujer
+
+```{r}
+dataset$AA5_NEW <-with(dataset,
+                       ifelse(is.na(AA5),6,
+                              ifelse(AA5 == 96 | AA5 == 99, 7, AA5)))
+```
+
+
+
+```{r}
+
+#dataset_fil <- dataset %>% select(is_female,DG3,DG4,DG6,DL1,MT2,DL2_NEW,feature1,feature2,feature3,feature4)
+#dataset_fil <- dataset %>% select(is_female,AA3,DG3,DG3A,DG4,DG6,DL0,DL1,DL3_NEW,MT2)
+dataset_fil <- dataset %>% select(is_female,AA3,DG3,DG3A,DG4,DG6,DL0,DL1,
+                                  DL15,DL16,DL17,DL18,DL19,DL20,DL21,DL22,DL23,
+                                  DL24,
+                                  MT1,MT1A_NEW,MT5_NEW,MT6_NEW,MT6A_NEW,
+                                  MT6B_NEW,MT10,
+                                  #MT13_1_NEW,MT13_2_NEW,MT13_3_NEW,
+                                  #MT13_4_NEW,MT13_5_NEW,MT13_6_NEW,MT13_7_NEW,
+                                  #MT13_8_NEW,MT13_9_NEW,MT13_10_NEW,MT13_11_NEW,
+                                  #MT13_12_NEW,MT13_13_NEW,MT13_14_NEW,MT13_96_NEW,
+                                  #MT14B_NEW,
+                                  FF1,FF2_NEW,FF9_NEW,FF13_NEW,#FF20_NEW,
+                                  FL1,FL2_NEW,FL3_NEW,FL4_NEW,
+                                  FL10,FL11,FL12,FL13,FL14,FL15,FL16,FL17,FL18,
+                                  MT2,
+                                  FB18,FB19)
+
+
+set.seed(1993)
+
+indexes<-createDataPartition(dataset_fil$is_female,
+                             times = 1,
+                             p=0.7, 
+                             list = FALSE)
+
+trainingset<-dataset_fil[indexes,]
+
+testset<-dataset_fil[-indexes,]
+
+prop.table(table(trainingset$is_female))
+prop.table(table(testset$is_female))
+
+cv.folds<-createMultiFolds(trainingset$is_female, k=5, times = 1)
+
+cv.cntrl<-trainControl(method = "repeatedcv", number = 5, repeats = 1, index = cv.folds)
+
+
+grid_rf<-expand.grid(mtry=c(4,6), splitrule=c("gini","extratrees"), min.node.size=1)
+
+gridxgb<-expand.grid(nrounds=c(100,200), max_depth=c(1,3),
+                     eta=c(0.1,0.4),gamma=c(0,3),
+                     colsample_bytree=c(0.7,0.9),
+                     min_child_weight=1, subsample=1)
+
+#require(doSNOW)
+#require(e1071)
+#require(ranger)
+
+#Sys.time()
+start.time<-Sys.time()
+
+#cl<-makeCluster(4, type = "SOCK")
+#registerDoSNOW(cl)
+
+rf_primero<-train(is_female~., data=trainingset, method="ranger",
+                  trControl=cv.cntrl, tuneLength=10,
+                  importance="permutation")
+
+total.time<-Sys.time()-start.time
+
+total.time
+
+rf_primero
+plot(varImp(rf_primero))
+#stopCluster(cl)
+
+```
+
+## Final before sending
+## ACC: 89.72%
+## Kappa: 79.37%

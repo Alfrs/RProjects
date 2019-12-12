@@ -3,7 +3,9 @@ title: "Proyecto"
 output: pdf_document
 ---
 
-```{r, warning=FALSE, message=FALSE}
+# Importando librerias
+
+```{r, warning = FALSE, message = FALSE}
 library(dplyr)
 library(tidyr)
 library(ggplot2)
@@ -11,163 +13,931 @@ library(plotly)
 library(caret)
 ```
 
-```{r, warning=FALSE,message=FALSE}
-setwd("C:/Users/alfrs/Documents/git/RProjects/Proyecto/ds")
+# Seteando el directorio de trabajo e importando el dataset de entrenamiento y pruebas
+
+```{r, warning = FALSE,message = FALSE}
+setwd("./ds")
 dataset <- read.csv("train.csv")
 testds <- read.csv("test.csv")
 ```
 
-```{r}
-str(dataset)
+# Revisando la esctructura de las variables
+
+```{r, warning = FALSE, message = FALSE}
+#str(dataset)
 ```
 
-```{r}
+# Cambiando la variable a predecir a un factor
+
+```{r, warning = FALSE, message = FALSE}
 dataset$is_female <- as.factor(dataset$is_female)
 ```
 
+# Creando variables nuevas donde se reemplazan los NAs con variables 999, para revisar distribuciones y proporciones
 
-```{r}
-summary(dataset)
+```{r, warning = FALSE, message = FALSE}
+dataset$MT1A_NEW <- with(dataset,ifelse(is.na(MT1A),999,MT1A))
+dataset$MT5_NEW <- with(dataset,ifelse(is.na(MT5),999,MT5))
+dataset$MT6_NEW <- with(dataset,ifelse(is.na(MT6),999,MT6))
+dataset$MT6A_NEW <- with(dataset,ifelse(is.na(MT6A),999,MT6A))
+dataset$MT6B_NEW <- with(dataset,ifelse(is.na(MT6B),999,MT6B))
+dataset$MT14B_NEW <- with(dataset,ifelse(is.na(MT14B),999,MT14B))
+dataset$FF2_NEW <- with(dataset,ifelse(is.na(FF2),999,FF2))
+dataset$FF9_NEW <- with(dataset,ifelse(is.na(FF9),999,FF9))
+dataset$FF13_NEW <- with(dataset,ifelse(is.na(FF13),999,FF13))
+dataset$FF20_NEW <- with(dataset,ifelse(is.na(FF20),999,FF20))
+dataset$FL2_NEW <- with(dataset,ifelse(is.na(FL2),999,FL2))
+dataset$FL3_NEW <- with(dataset,ifelse(is.na(FL3),999,FL3))
+dataset$FL4_NEW <- with(dataset,ifelse(is.na(FL4),999,FL4))
 ```
 
-```{r}
+# Hacemos lo mismo para el dataset de pruebas
+
+```{r, warning = FALSE, message = FALSE}
+testds$MT1A_NEW <- with(testds,ifelse(is.na(MT1A),999,MT1A))
+testds$MT5_NEW <- with(testds,ifelse(is.na(MT5),999,MT5))
+testds$MT6_NEW <- with(testds,ifelse(is.na(MT6),999,MT6))
+testds$MT6A_NEW <- with(testds,ifelse(is.na(MT6A),999,MT6A))
+testds$MT6B_NEW <- with(testds,ifelse(is.na(MT6B),999,MT6B))
+testds$MT14B_NEW <- with(testds,ifelse(is.na(MT14B),999,MT14B))
+testds$FF2_NEW <- with(testds,ifelse(is.na(FF2),999,FF2))
+testds$FF9_NEW <- with(testds,ifelse(is.na(FF9),999,FF9))
+testds$FF13_NEW <- with(testds,ifelse(is.na(FF13),999,FF13))
+testds$FF20_NEW <- with(testds,ifelse(is.na(FF20),999,FF20))
+testds$FL2_NEW <- with(testds,ifelse(is.na(FL2),999,FL2))
+testds$FL3_NEW <- with(testds,ifelse(is.na(FL3),999,FL3))
+testds$FL4_NEW <- with(testds,ifelse(is.na(FL4),999,FL4))
+```
+
+
+# Revisando el dataset; Resulta inutil por la cantidad de variables
+
+```{r, warning = FALSE, message = FALSE}
+# summary(dataset)
+```
+
+# Revisamos los datos iniciales
+
+```{r, warning = FALSE, message = FALSE}
 head(dataset)
 ```
 
-```{r}
-dataset$DG3_NEW <- with(dataset,
-                        ifelse(DG3 == 99 | DG3 == 96, 9, DG3))
+# Iniciamos el EDA
 
+## En este punto procedemos a revisar 46 columnas, revisamos graficos de barras para ver distribuciones y proporciones
+
+```{r, warning = FALSE, message = FALSE}
 ggplot(dataset %>%
-         count(DG3_NEW
+         count(DL0
                ,is_female),
-       aes(x = DG3_NEW, 
-           y = n,
+       aes(x = DL0, y = n,
            fill=is_female))+
   geom_col()+
   geom_text(aes(label = n),
             position = position_stack(vjust = .5)) +
-  ggtitle("Count of is_female by Marital Status")+
-  theme(plot.title = element_text(hjust = 0.5,),
+  theme(plot.title = element_text(hjust = 0.5),
         panel.background = element_blank())+
-  ylab("Count of is_female")
+  ylab('Count of is_female')
 ```
 
-```{r}
-dataset$DG3A_NEW <- with(dataset,
-                         ifelse(DG3A == 99 | DG3A == 96, 7, DG3A))
-
+```{r, warning = FALSE, message = FALSE}
 ggplot(dataset %>%
-         count(DG3A_NEW,
-               is_female),
-       aes(x = DG3A_NEW, 
-           y = n,
+         count(DL1
+               ,is_female),
+       aes(x = DL1, y = n,
            fill=is_female))+
   geom_col()+
   geom_text(aes(label = n),
             position = position_stack(vjust = .5)) +
-  ggtitle("Count of is_female by Religion")+
-  theme(plot.title = element_text(hjust = 0.5,),
+  theme(plot.title = element_text(hjust = 0.5),
         panel.background = element_blank())+
-  ylab("Count of is_female")
+  ylab('Count of is_female')
 ```
 
-```{r}
-
-dataset$DG4_NEW <- with(dataset,
-                        ifelse(DG4 == 99 | DG4 == 96, 12, DG4))
-
+```{r, warning = FALSE, message = FALSE}
 ggplot(dataset %>%
-         count(DG4_NEW,
-               is_female),
-       aes(x = DG4_NEW,
-           y = n,
+         count(DG6
+               ,is_female),
+       aes(x = DG6, y = n,
            fill=is_female))+
   geom_col()+
   geom_text(aes(label = n),
             position = position_stack(vjust = .5)) +
-  ggtitle("Count of is_female by Level of Education")+
-  theme(plot.title = element_text(hjust = 0.5,),
+  theme(plot.title = element_text(hjust = 0.5),
         panel.background = element_blank())+
-  ylab("Count of is_female")
+  ylab('Count of is_female')
 ```
 
-```{r}
-
-dataset$DG6_NEW <- with(dataset,
-                        ifelse(DG6 == 99 | DG6 == 96, 10, DG6))
-
+```{r, warning = FALSE, message = FALSE}
 ggplot(dataset %>%
-         count(DG6_NEW,is_female),
-       aes(x = DG6_NEW, y = n,fill=is_female))+
+         count(DG3
+               ,is_female),
+       aes(x = DG3, y = n,
+           fill=is_female))+
   geom_col()+
   geom_text(aes(label = n),
             position = position_stack(vjust = .5)) +
-  ggtitle("Count of is_female by Relationship to Household Head")+
-  theme(plot.title = element_text(hjust = 0.5,),
+  theme(plot.title = element_text(hjust = 0.5),
         panel.background = element_blank())+
-  ylab("Count of is_female")
+  ylab('Count of is_female')
 ```
 
-```{r}
-dataset$DL1_NEW <- with(dataset,
-                        ifelse(DL1 == 99 | DL1 == 96, 11, DL1))
-
+```{r, warning = FALSE, message = FALSE}
 ggplot(dataset %>%
-         filter(DL1_NEW != '96' & DL1 != '99') %>%
-         count(DL1_NEW,is_female),aes(x = DL1_NEW, y = n,fill=is_female))+
+         count(MT2
+               ,is_female),
+       aes(x = MT2, y = n,
+           fill=is_female))+
   geom_col()+
-  geom_text(aes(label = n),position = position_stack(vjust = .5)) +
-  ggtitle("Count of is_female by Ocupation past year")+
-  theme(plot.title = element_text(hjust = 0.5,),
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
         panel.background = element_blank())+
-  ylab("Count of is_female")
+  ylab('Count of is_female')
 ```
 
-```{r}
-dataset$DL2_NEW <- with(dataset,
-                        ifelse(is.na(DL2),34,
-                               ifelse(DL2 == 96 | DL2 == 99, 33, DL2)))
-
-
+```{r, warning = FALSE, message = FALSE}
 ggplot(dataset %>%
-         count(DL2_NEW,is_female),aes(x = DL2_NEW, y = n,fill=is_female))+
+         count(AA3
+               ,is_female),
+       aes(x = AA3, y = n,
+           fill=is_female))+
   geom_col()+
-  geom_text(aes(label = n),position = position_stack(vjust = .5)) +
-  ggtitle("Count of is_female by Primary Job")+
-  theme(plot.title = element_text(hjust = 0.5,),
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
         panel.background = element_blank())+
-  ylab("Count of is_female")
+  ylab('Count of is_female')
 ```
 
-
-```{r}
-dataset$DL5_NEW <-with(dataset,
-                       ifelse(is.na(DL5),25,
-                              ifelse(DL5 == 96 | DL5 == 99, 24, DL5)))
-
+```{r, warning = FALSE, message = FALSE}
 ggplot(dataset %>%
-         count(DL5_NEW,is_female),aes(x = DL5_NEW, y = n,fill=is_female))+
+         count(DG3A
+               ,is_female),
+       aes(x = DG3A, y = n,
+           fill=is_female))+
   geom_col()+
-  geom_text(aes(label = n),position = position_stack(vjust = .5)) +
-  ggtitle("Count of is_female by Money Source Past Year")+
-  theme(plot.title = element_text(hjust = 0.5,),
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
         panel.background = element_blank())+
-  ylab("Count of is_female")
+  ylab('Count of is_female')
 ```
 
-```{r}
-dataset$DL24_NEW <-with(dataset,
-                       ifelse(is.na(DL24),11,
-                              ifelse(DL24 == 96 | DL24 == 99, 10, DL24)))
-
+```{r, warning = FALSE, message = FALSE}
 ggplot(dataset %>%
-         count(DL24_NEW,is_female),aes(x = DL24_NEW, y = n,fill=is_female))+
+         count(DG4
+               ,is_female),
+       aes(x = DG4, y = n,
+           fill=is_female))+
   geom_col()+
-  geom_text(aes(label = n),position = position_stack(vjust = .5)) +
-  ggtitle("Count of is_female by Money Source Past Year")+
-  theme(plot.title = element_text(hjust = 0.5,),
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
         panel.background = element_blank())+
-  ylab("Count of is_female")
+  ylab('Count of is_female')
 ```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(DL15
+               ,is_female),
+       aes(x = DL15, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(DL16
+               ,is_female),
+       aes(x = DL16, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(DL17
+               ,is_female),
+       aes(x = DL17, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(DL18
+               ,is_female),
+       aes(x = DL18, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(DL19
+               ,is_female),
+       aes(x = DL19, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(DL20
+               ,is_female),
+       aes(x = DL20, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(DL21
+               ,is_female),
+       aes(x = DL21, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(DL22
+               ,is_female),
+       aes(x = DL22, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(DL23
+               ,is_female),
+       aes(x = DL23, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(DL24
+               ,is_female),
+       aes(x = DL24, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(MT1
+               ,is_female),
+       aes(x = MT1, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(MT1A_NEW
+               ,is_female),
+       aes(x = MT1A_NEW, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(MT5_NEW
+               ,is_female),
+       aes(x = MT5_NEW, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(MT6_NEW
+               ,is_female),
+       aes(x = MT6_NEW, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(MT6A_NEW
+               ,is_female),
+       aes(x = MT6A_NEW, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(MT6B_NEW
+               ,is_female),
+       aes(x = MT6B_NEW, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(MT10
+               ,is_female),
+       aes(x = MT10, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(MT14B_NEW
+               ,is_female),
+       aes(x = MT14B_NEW, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(FF1
+               ,is_female),
+       aes(x = FF1, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(FF2_NEW
+               ,is_female),
+       aes(x = FF2_NEW, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(FF9_NEW
+               ,is_female),
+       aes(x = FF9_NEW, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(FF13_NEW
+               ,is_female),
+       aes(x = FF13_NEW, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(FF20_NEW
+               ,is_female),
+       aes(x = FF20_NEW, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(FL1
+               ,is_female),
+       aes(x = FL1, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(FL2_NEW
+               ,is_female),
+       aes(x = FL2_NEW, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(FL3_NEW
+               ,is_female),
+       aes(x = FL3_NEW, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(FL4_NEW
+               ,is_female),
+       aes(x = FL4_NEW, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(FL10
+               ,is_female),
+       aes(x = FL10, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(FL11
+               ,is_female),
+       aes(x = FL11, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(FL12
+               ,is_female),
+       aes(x = FL12, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(FL13
+               ,is_female),
+       aes(x = FL13, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(FL14
+               ,is_female),
+       aes(x = FL14, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(FL15
+               ,is_female),
+       aes(x = FL15, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(FL16
+               ,is_female),
+       aes(x = FL16, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(FL17
+               ,is_female),
+       aes(x = FL17, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(FL18
+               ,is_female),
+       aes(x = FL18, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(FB18
+               ,is_female),
+       aes(x = FB18, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+```{r, warning = FALSE, message = FALSE}
+ggplot(dataset %>%
+         count(FB19
+               ,is_female),
+       aes(x = FB19, y = n,
+           fill=is_female))+
+  geom_col()+
+  geom_text(aes(label = n),
+            position = position_stack(vjust = .5)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank())+
+  ylab('Count of is_female')
+```
+
+
+# Iniciamos con el modelo de prediccion, en este primer caso utilizamos RandomForest, basado en area bajo la curva (ROC)
+
+
+```{r, warning = FALSE, message = FALSE}
+
+#dataset_fil <- dataset %>% select(is_female,DG3,DG4,DG6,DL1,MT2,DL2_NEW,feature1,feature2,feature3,feature4)
+#dataset_fil <- dataset %>% select(is_female,AA3,DG3,DG3A,DG4,DG6,DL0,DL1,DL3_NEW,MT2)
+
+dataset$is_female_yn <-with(dataset,
+                       ifelse(is_female == 1, "Yes", "No"))
+
+cols_fact <- c("DL0","DL1","DG6","DG3","MT2",
+"AA3","DG3A","DG4",
+"DL15","DL16","DL17","DL18","DL19","DL20","DL21","DL22","DL23",
+"DL24",
+"MT1",
+"MT1A_NEW","MT5_NEW","MT6_NEW","MT6A_NEW",
+"MT6B_NEW","MT10",
+"MT14B_NEW",
+"FF1","FF2_NEW","FF9_NEW","FF13_NEW","FF20_NEW",
+"FL1",
+"FL2_NEW","FL3_NEW","FL4_NEW",
+"FL10","FL11","FL12","FL13","FL14","FL15","FL16","FL17","FL18",
+"FB18","FB19")
+
+dataset[cols_fact] <- lapply(dataset[cols_fact], factor)
+testds[cols_fact] <- lapply(testds[cols_fact], factor)
+
+#sapply(dataset[,1240:1249], class)
+
+dataset_fil <- dataset %>% select(is_female_yn,cols_fact)
+testds_fil <- testds %>% select(test_id,cols_fact)
+                                 
+                                  # DL0,DL1,DG6,DG3,MT2,
+                                  # AA3,DG3A,DG4,
+                                  # DL15,DL16,DL17,DL18,DL19,DL20,DL21,DL22,DL23,
+                                  # DL24,
+                                  # MT1,
+                                  # MT1A_NEW,MT5_NEW,MT6_NEW,MT6A_NEW,
+                                  # MT6B_NEW,MT10,
+                                  # MT14B_NEW,
+                                  # FF1,FF2_NEW,FF9_NEW,FF13_NEW,#FF20_NEW,
+                                  # FL1,
+                                  # FL2_NEW,FL3_NEW,FL4_NEW,
+                                  # FL10,FL11,FL12,FL13,FL14,FL15,FL16,FL17,FL18,
+                                  # FB18,FB19
+
+set.seed(1993)
+
+#indexes<-createDataPartition(dataset_fil$is_female_yn,
+#                             times = 1,
+#                             p=0.7,
+#                             list = FALSE)
+
+#trainingset<-dataset_fil[indexes,]
+
+#testset<-dataset_fil[-indexes,]
+
+cv.folds<-createMultiFolds(dataset_fil$is_female_yn, k=5, times = 1)
+
+cv.cntrl<-trainControl(method = "repeatedcv", number = 5, repeats = 1, index = cv.folds,
+                       classProbs = TRUE,
+                       summaryFunction = twoClassSummary
+                       )
+
+
+grid_rf<-expand.grid(mtry=c(4,6), splitrule=c("gini","extratrees"), min.node.size=1)
+
+gridxgb<-expand.grid(nrounds=c(100,200), max_depth=c(1,3),
+                     eta=c(0.1,0.4),gamma=c(0,3),
+                     colsample_bytree=c(0.7,0.9),
+                     min_child_weight=1, subsample=1)
+
+#require(doSNOW)
+#require(e1071)
+#require(ranger)
+
+#Sys.time()
+start.time<-Sys.time()
+
+#cl<-makeCluster(4, type = "SOCK")
+#registerDoSNOW(cl)
+
+randomForest_ROC<-train(is_female_yn~., data=dataset_fil, method="ranger",
+                  trControl=cv.cntrl, tuneLength=10,
+                  importance="permutation")
+
+total.time<-Sys.time()-start.time
+
+total.time
+
+
+
+randomForest_ROC
+plot(varImp(randomForest_ROC))
+print(varImp(randomForest_ROC))
+#stopCluster(cl)
+
+```
+
+# Removemos columnas del set de pruebas, estos son valores que no tenemos en el set de entrenamiento, y por ende no las tenemos en el modelo
+
+```{r, warning = FALSE, message = FALSE}
+
+testds_fil <- droplevels(testds_fil[!testds_fil$DG4 == '96',])
+testds_fil <- droplevels(testds_fil[!testds_fil$MT14B_NEW == '8',])
+testds_fil <- droplevels(testds_fil[!testds_fil$MT14B_NEW == '14',])
+
+```
+
+# Añadimos las predicciones a un dataframe nuevo, utilizando el set de pruebas
+
+```{r, warning = FALSE, message = FALSE}
+library(modelr)
+
+predset_ROC <- add_predictions(testds_fil, randomForest_ROC, var = "isfemale_pred", type = "raw")
+finalpredROC <- predset_ROC %>% select(test_id,isfemale_pred)
+finalpredROC$isfemale_pred <- with(finalpredROC,ifelse(isfemale_pred == "Yes",1,0))
+finalpredROC
+
+```
+
+# Utilizamos otro modelo, tambien es RandomForest, pero utilizando accuracy en lugar de ROC
+
+```{r, warning = FALSE, message = FALSE}
+
+dataset$is_female_yn <-with(dataset,
+                       ifelse(is_female == 1, "Yes", "No"))
+
+cols_fact <- c("DL0","DL1","DG6","DG3","MT2",
+"AA3","DG3A","DG4",
+"DL15","DL16","DL17","DL18","DL19","DL20","DL21","DL22","DL23",
+"DL24",
+"MT1",
+"MT1A_NEW","MT5_NEW","MT6_NEW","MT6A_NEW",
+"MT6B_NEW","MT10",
+"MT14B_NEW",
+"FF1","FF2_NEW","FF9_NEW","FF13_NEW","FF20_NEW",
+"FL1",
+"FL2_NEW","FL3_NEW","FL4_NEW",
+"FL10","FL11","FL12","FL13","FL14","FL15","FL16","FL17","FL18",
+"FB18","FB19")
+
+dataset[cols_fact] <- lapply(dataset[cols_fact], factor)
+testds[cols_fact] <- lapply(testds[cols_fact], factor)
+
+dataset_fil <- dataset %>% select(is_female,cols_fact)
+testds_fil <- testds %>% select(test_id,cols_fact)
+
+set.seed(1993)
+
+cv.folds<-createMultiFolds(dataset_fil$is_female, k=5, times = 1)
+
+cv.cntrl<-trainControl(method = "repeatedcv", number = 5, repeats = 1, index = cv.folds)
+
+
+grid_rf<-expand.grid(mtry=c(4,6), splitrule=c("gini","extratrees"), min.node.size=1)
+
+gridxgb<-expand.grid(nrounds=c(100,200), max_depth=c(1,3),
+                     eta=c(0.1,0.4),gamma=c(0,3),
+                     colsample_bytree=c(0.7,0.9),
+                     min_child_weight=1, subsample=1)
+
+start.time<-Sys.time()
+
+randomForest_acc<-train(is_female~., data=dataset_fil, method="ranger",
+                  trControl=cv.cntrl, tuneLength=10,
+                  importance="permutation")
+
+total.time<-Sys.time()-start.time
+
+total.time
+
+randomForest_acc
+plot(varImp(randomForest_acc))
+
+```
+
+# Removemos los mismos valores del set de pruebas
+
+```{r, warning = FALSE, message = FALSE}
+
+testds_fil <- droplevels(testds_fil[!testds_fil$DG4 == '96',])
+testds_fil <- droplevels(testds_fil[!testds_fil$MT14B_NEW == '8',])
+testds_fil <- droplevels(testds_fil[!testds_fil$MT14B_NEW == '14',])
+
+```
+
+# Añadimos las predicciones en un nuevo dataframe
+
+```{r, warning = FALSE, message = FALSE}
+library(modelr)
+
+predset_acc <- add_predictions(testds_fil, randomForest_acc, var = "isfemale_pred", type = "raw")
+finalpredacc <- predset_acc %>% select(test_id,isfemale_pred)
+finalpredacc
+
+```
+
+# Escribimos los resultados en archivos de CSV
+
+```{r, warning = FALSE, message = FALSE}
+
+setwd("./")
+write.csv(finalpredROC,"Prediction_RF_ROC.csv", row.names = FALSE)
+write.csv(finalpredacc,"Prediction_RF_ACC.csv", row.names = FALSE)
+
+```
+
 

@@ -1,0 +1,87 @@
+---
+title: "Proyecto"
+output: pdf_document
+---
+
+# Importando librerias
+
+```{r, warning=FALSE, message=FALSE}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(plotly)
+library(caret)
+```
+
+# Seteando el directorio de trabajo e importando el dataset
+
+```{r, warning=FALSE,message=FALSE}
+setwd("./ds")
+dataset <- read.csv("train.csv")
+testds <- read.csv("test.csv")
+```
+
+# Revisando la esctructura de las variables
+
+```{r, warning = FALSE, message = FALSE}
+# str(dataset)
+```
+
+# Cambiando la variable a predecir a un factor
+
+```{r, warning = FALSE, message = FALSE}
+dataset$is_female <- as.factor(dataset$is_female)
+```
+
+```{r}
+dataset$MT1A_NEW <- with(dataset,ifelse(is.na(MT1A),999,MT1A))
+dataset$MT5_NEW <- with(dataset,ifelse(is.na(MT5),999,MT5))
+dataset$MT6_NEW <- with(dataset,ifelse(is.na(MT6),999,MT6))
+dataset$MT6A_NEW <- with(dataset,ifelse(is.na(MT6A),999,MT6A))
+dataset$MT6B_NEW <- with(dataset,ifelse(is.na(MT6B),999,MT6B))
+dataset$MT14B_NEW <- with(dataset,ifelse(is.na(MT14B),999,MT14B))
+dataset$FF2_NEW <- with(dataset,ifelse(is.na(FF2),999,FF2))
+dataset$FF9_NEW <- with(dataset,ifelse(is.na(FF9),999,FF9))
+dataset$FF13_NEW <- with(dataset,ifelse(is.na(FF13),999,FF13))
+dataset$FF20_NEW <- with(dataset,ifelse(is.na(FF20),999,FF20))
+dataset$FL2_NEW <- with(dataset,ifelse(is.na(FL2),999,FL2))
+dataset$FL3_NEW <- with(dataset,ifelse(is.na(FL3),999,FL3))
+dataset$FL4_NEW <- with(dataset,ifelse(is.na(FL4),999,FL4))
+```
+
+```{r}
+testds$MT1A_NEW <- with(testds,ifelse(is.na(MT1A),999,MT1A))
+testds$MT5_NEW <- with(testds,ifelse(is.na(MT5),999,MT5))
+testds$MT6_NEW <- with(testds,ifelse(is.na(MT6),999,MT6))
+testds$MT6A_NEW <- with(testds,ifelse(is.na(MT6A),999,MT6A))
+testds$MT6B_NEW <- with(testds,ifelse(is.na(MT6B),999,MT6B))
+testds$MT14B_NEW <- with(testds,ifelse(is.na(MT14B),999,MT14B))
+testds$FF2_NEW <- with(testds,ifelse(is.na(FF2),999,FF2))
+testds$FF9_NEW <- with(testds,ifelse(is.na(FF9),999,FF9))
+testds$FF13_NEW <- with(testds,ifelse(is.na(FF13),999,FF13))
+testds$FF20_NEW <- with(testds,ifelse(is.na(FF20),999,FF20))
+testds$FL2_NEW <- with(testds,ifelse(is.na(FL2),999,FL2))
+testds$FL3_NEW <- with(testds,ifelse(is.na(FL3),999,FL3))
+testds$FL4_NEW <- with(testds,ifelse(is.na(FL4),999,FL4))
+```
+
+```{r}
+
+cols_fact <- c("DL0","DL1","DG6","DG3","MT2",
+"AA3","DG3A","DG4",
+"DL15","DL16","DL17","DL18","DL19","DL20","DL21","DL22","DL23",
+"DL24",
+"MT1",
+"MT1A_NEW","MT5_NEW","MT6_NEW","MT6A_NEW",
+"MT6B_NEW","MT10",
+"MT14B_NEW",
+"FF1","FF2_NEW","FF9_NEW","FF13_NEW","FF20_NEW",
+"FL1",
+"FL2_NEW","FL3_NEW","FL4_NEW",
+"FL10","FL11","FL12","FL13","FL14","FL15","FL16","FL17","FL18",
+"FB18","FB19")
+
+dataset[cols_fact] <- lapply(dataset[cols_fact], factor)
+testds[cols_fact] <- lapply(testds[cols_fact], factor)
+
+```
